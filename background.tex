@@ -1,6 +1,22 @@
 \section{Background}
 
-Much work has been completed on information-flow languages.  Projects like FlowCaml\cite{simonet2003flow}, JIF\cite{myers2000protecting}, Fabric\cite{liu2009fabric}, and more offer complete production languages with strong information-flow security guarantees.  These languages are aimed for deployment in industry, where their security properties are relied upon for the integrity and confidentiality of sensitive information.  Like all software systems, the compilers for these languages are not free of bugs; these bugs can compromise the very security policies that the languages seek to enforce.  Other languages have addressed this problem by building verified compilers\cite{leroy2012compcert,okuma2003executing,chlipala2010verified,berghofer2004extracting,strecker2002formal,necula1998design,necula2002proof}.  Verified compilers are free of implementation-level bugs; they guarantee that the semantics of the source program are identical to the semantics of the destination language\cite{necula1998design}.  As of yet, no verified compiler exists for an information-flow language, leaving users to choose between a provably correct compiler for an insecure language and a potentially-buggy compiler for a secure language.  
+Much work has been completed on information-flow languages.  Projects
+like FlowCaml\cite{simonet2003flow}, JIF\cite{myers2000protecting},
+Fabric\cite{liu2009fabric}, and more offer complete production languages
+with strong information-flow security guarantees.  These languages are
+aimed for deployment in industry, where their security properties are
+relied upon for the integrity and confidentiality of sensitive
+information.  Like all software systems, the compilers for these
+languages are not free of bugs; these bugs can compromise the very
+security policies that the languages seek to enforce.  Other languages
+have addressed this problem by building verified
+compilers\cite{leroy2012compcert,okuma2003executing,chlipala2010verified,berghofer2004extracting,strecker2002formal,necula1998design,necula2002proof}.
+Verified compilers are free of implementation-level bugs; they guarantee
+that the semantics of the source program are identical to the semantics
+of the destination language\cite{necula1998design}.  As far as we know,
+no verified compiler exists for an information-flow language, leaving
+users to choose between a provably correct compiler for an insecure
+language and a potentially-buggy compiler for a secure language.  
 
 
 %Both verified compilers and compilers for information-flow languages are nothing new.  (most of the citations in the bibtex file could apply here).  Much previous work has been done on verified compilers, notably work on CompCert.  Much work has also been done in information-flow languages.  Information flow languages promise statically-enforced security properties, and often have proofs demonstrating that the language is capable of enforcing these policies.  But how do you trust the language?  Discussion of motivating bugs!  Verified compilers are a way to avoid this problem entirely.  A fun Fabric bug was a failure to support the += operator, which was silently accepted and treated as =, which is terrible.  But it doesn't actually affect the security aspect of these languages.  Anyway.  
