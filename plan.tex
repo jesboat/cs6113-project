@@ -3,16 +3,31 @@
 We propose to create a verified compiler for a language similar to that
 discussed in Pottier and Simonet's work\cite{InfoFlowML} compiling to a
 simple register transfer level (RTL) language.  We will construct this
-compiler using the Coq proof assistant\cite{coq?} using features which
-allow us to extract a certified compiler.  This will allow us to take
-the first step towards a verified compiler for a language with static
-information flow types such as Jif\cite{myers1999jflow} or
-FlowCaml\cite{simonet2003flow,simonet2003flowmanual}.
+compiler using the Coq proof assistant\cite{coqart} using features which
+allow us to extract a certified compiler.
 
-%TODO:
-Stuff about why it would be useful to have a verified compiler for
-something like Jif or FlowCaml.
+This will allow us to take the first step towards a verified compiler
+for a language with static information flow types such as
+Jif\cite{myers1999jflow} or
+FlowCaml\cite{simonet2003flow,simonet2003flowmanual}.  Developing a
+verified compiler for such languages removes the need for programmers to
+trust the compiler, they can instead verify the proofs used to generate
+the compiler to convince themselves that semantics of the original
+source program are preserved and properties such as non-interference are
+enforced by the compiler.  This rules out the possibility that a
+compiler does not introduce bugs not present in the source program, such
+as additional undesirable information flows.  As a result, this compiler
+reduces the trusted computing base from a large complex compiler to a
+much simpler verifier to mechanically check the proofs the compiler is
+extracted from.
 
-%TODO:
-Expected timeline, anticipated problems, and potential additions if we
-have time?
+To develop this verified compiler using Coq, we plan to write formal
+proofs to show that the type system correctly enforces non-interference
+and that a CPS conversion\cite{appel2007compiling}, which would be our
+approach to compiling the language to an RTL language, correctly
+preserves the semantics of the source program.  We expect that the proof
+that the type system enforces non-interference will be very similar to
+the proof presented in Pottier and Simonet's paper\cite{InfoFlowML}.
+Development will proceed by first writing the proof for CPS conversion,
+developing a compiler for the language without enforcing the type
+system, and then going back and adding the non-interference proof.
