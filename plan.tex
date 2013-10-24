@@ -1,19 +1,17 @@
 \section{Plan}
 
 We propose to create a verified compiler for a language similar to that
-discussed in Pottier and Simonet's work\cite{InfoFlowML}.  We will
-construct this compiler using the Coq proof assistant\cite{coq?} using
-features which allow us to extract a certified compiler.  This will
-allow us to take the first step towards a verified compiler for a
-language with static information flow types such as Jif\cite{Jif?} or
-FlowCaml\cite{FlowCaml?}.
+discussed in Pottier and Simonet's work\cite{InfoFlowML} compiling to a
+simple register transfer level (RTL) language.  We will construct this
+compiler using the Coq proof assistant\cite{coq?} using features which
+allow us to extract a certified compiler.  This will allow us to take
+the first step towards a verified compiler for a language with static
+information flow types such as Jif\cite{myers1999jflow} or
+FlowCaml\cite{simonet2003flow,simonet2003flowmanual}.
 
 %TODO:
 Stuff about why it would be useful to have a verified compiler for
 something like Jif or FlowCaml.
-
-%TODO:
-Stuff about the target and source languages we will be supporting.
 
 %TODO:
 Expected timeline, anticipated problems, and potential additions if we
