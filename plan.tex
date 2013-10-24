@@ -1,19 +1,18 @@
 \section{Plan}
 
-We propose a verified compiler for a language similar to typed CoreML$^2$\
-cite{InfoFlowML}, targeting a simple register transfer level (RTL) language.  
+We propose a verified compiler for a language similar to typed CoreML$^2$
+\cite{InfoFlowML}, targeting a simple register transfer level (RTL) language.  
 We will construct this compiler in the Coq proof assistant\cite{coqart}, 
-which allows extraction to OCAML\cite{berghofer2004extracting}.
+which allows the extraction of verified code to OCAML\cite{berghofer2004extracting}.
 
 This will allow us to take the first step towards a verified compiler
 for a language with static information flow types such as
 Jif\cite{myers1999jflow} or
 FlowCaml\cite{simonet2003flow,simonet2003flowmanual}.  Developing a
 verified compiler for such languages removes the need for programmers to
-trust the compiler; to convince themselves that the compiler preserves 
-the semantics and enforces properties (such as non-interference) of the 
-source program they can verify the proofs used to generate
-the compiler.  This eliminates the possibility of a compiler
+trust the compiler; users can convince themselves of the compiler's 
+correctness by verifying the proofs used to generate the compiler.
+This eliminates the possibility of a compiler
 introducing bugs during the translation of the source program, such
 as additional undesirable information flows.  As a result, this compiler
 reduces the trusted computing base from a large complex compiler to a
@@ -30,3 +29,4 @@ the proof presented in Pottier and Simonet's paper\cite{InfoFlowML}.
 Development will proceed by first writing the proof for CPS conversion,
 developing a compiler for the language without enforcing the type
 system, and then going back and adding the non-interference proof.
+We plan to target CompCert's RTL intermediate language.
