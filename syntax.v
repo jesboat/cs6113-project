@@ -17,11 +17,13 @@ Module CoreMLSynatx.
   | Memory_Location : memory_location -> value
   | Tuple : value -> value -> value
   | Inj1 : value -> value (* what is this inj term anyway?  I have no intuition into it *)
-  | Inj2 : value -> value. 
+  | Inj2 : value -> value
+  | Value_Pair : value -> value -> value.
   
   Inductive answer : Type := 
   | Value : value -> answer
-  | Uncaught_Exception : exception -> value -> answer.
+  | Uncaught_Exception : exception -> value -> answer
+  | Answer_Pair : answer -> answer -> answer.
   
 
   Inductive expression : Type :=
@@ -35,6 +37,7 @@ Module CoreMLSynatx.
   | Sum_Elimination : value -> variable_name -> expression -> expression -> expression
   | Let_Bind : variable_name -> value -> expression -> expression
   | Evaluation_Context : expression -> evaluation_context -> expression
+  | Expression_Pair : expression -> expression -> expression
 
   with evaluation_context : Type := 
   | i_dont_know_what_the_brackets_are : evaluation_context.
