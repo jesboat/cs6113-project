@@ -7,18 +7,20 @@ Module CoreMLSynatx.
   | Identifier : variable_name -> value
   | Unit :  value
   | Integer : nat -> value
-  | Fix : value -> value -> value 
-  | Tuple : value -> value -> value.
- 
+  | Fix : variable_name -> expression -> value 
+  | Tuple : value -> value -> value
+  | Void : value
+  | Value_Evaluation_Pair : value -> value -> value
 
-  Inductive expression : Type :=
+  with 
+  expression : Type :=
   | Value : value -> expression 
   | Application : value -> value -> expression
-  | Project1 : value -> expression
-  | Project2 : value -> expression 
   | Let_Bind : variable_name -> value -> expression -> expression
-  | Expression_Pair : expression -> expression -> expression
-  | If : expression -> expression -> expression -> expression.
+  | If : expression -> expression -> expression -> expression
+  |	Expression_Evaluation_Pair : expression -> expression -> expression
+  | Project1 : value -> expression
+  | Project2 : value -> expression.
 
-
+	
 End CoreMLSynatx.
