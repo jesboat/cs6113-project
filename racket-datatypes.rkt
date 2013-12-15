@@ -19,7 +19,7 @@
   [Value_Evaluation_Pair (left : value)  (right : value)]
 )
  
-(define-values (log-symbol get-symbols)
+(define-values (log-symbol get-symbols convert-symbol)
   (local 
    [(define symbol-list (list))
 	(define (log-symbol s) 
@@ -27,8 +27,16 @@
 		(set! symbol-list (cons s symbol-list)) 
 		(symbol->string s)))
 	(define (get-symbols) 
-	  (map symbol->string (remove-duplicates symbol-list)))]
-   (values log-symbol get-symbols)))
+	  (map symbol->string (remove-duplicates symbol-list)))
+    (define (convert-symbol s)
+        (local
+         [(define lst : (listof symbol) (remove-duplicates symbol-list))
+          (define (find-pos (item : symbol) (cur-pos : number) (list : (listof symbol))) : number
+            (if (symbol=? (first list) item)
+                cur-pos
+                (find-pos item (+ cur-pos 1) list)))]
+         (string-append "Var " (number->string (find-pos (string->symbol s) 0 lst)))))]
+   (values log-symbol get-symbols convert-symbol)))
 
 
 (define (to-coq-expr ast)
@@ -43,7 +51,7 @@
 	[Let-Bind 
 	 (name bind body) 
 	 (stringlist->string 
-	  (list "Let_Bind (" (log-symbol name) ") 
+	  (list "Let_Bind (" (convert-symbol (log-symbol name)) ") 
       (" (to-coq-val bind)  ") (" (to-coq-expr body) ") "))]
 	[Ite 
 	 (test then otherwise)
@@ -58,13 +66,13 @@
 
 (define (to-coq-val v) 
   (type-case value v
-	[Identifier (v) (string-append " Identifier " (log-symbol v))]
+	[Identifier (v) (string-append (string-append " Identifier (" (convert-symbol (log-symbol v))) ")")]
 	[Unit () " Unit "]
 	[Integer (val) (string-append " Integer " (number->string val))]
 	[Fix (arg bod) 
 		 (stringlist->string 
 		  (list 
-		   " Fix ("(log-symbol arg) ") (" (to-coq-expr bod) ") "))]
+		   " Fix ("(convert-symbol (log-symbol arg)) ") (" (to-coq-expr bod) ") "))]
 	[Void () " Void "]
 	[Value_Evaluation_Pair (l r)
 	 (stringlist->string
