@@ -22,7 +22,6 @@
   | Unit :  type -> value
   | Integer : type -> nat -> value
   | Fix : type -> variable_name -> variable_name -> expression -> value 
-  | Void : type -> value
   | Value_Evaluation_Pair : type -> value -> value -> value
 
   with 
