@@ -40,21 +40,21 @@ Definition extend (Gamma : context) (x : variable_name) (T : type) :=
 
 Inductive value_has_type : context -> value -> type -> Prop :=
 | V_Unit : forall (gamma : context) (l : label_type),
-  value_has_type gamma Unit (Simple_Type Bottom_t l)
+  value_has_type gamma (Unit (Simple_Type Bottom_t l)) (Simple_Type Bottom_t l)
 | V_Int : forall (gamma : context) (l : label_type) (n : nat),
-  value_has_type gamma (Integer n) (Simple_Type Int_t l)
+  value_has_type gamma (Integer (Simple_Type Int_t l) n) (Simple_Type Int_t l)
 | V_Bracket : forall (gamma : context) (t : type) (v1 v2 : value),
   (value_has_type gamma v1 t) /\ (value_has_type gamma v2 t) /\ (guards High_Label t)
-  -> value_has_type gamma (Value_Evaluation_Pair v1 v2) t
+  -> value_has_type gamma (Value_Evaluation_Pair t v1 v2) t
 | V_Sub : forall (gamma : context) (t t' : type) (v : value),
   (value_has_type gamma v t') /\ (type_subtype t' t)
   -> value_has_type gamma v t
 | V_Var : forall (gamma : context) (x : variable_name) (t : type),
   gamma x = Some t
-  -> value_has_type gamma (Identifier x) t
+  -> value_has_type gamma (Identifier t x) t
 | V_Abs : forall (gamma : context) (t t' : type) (l pc : label_type) (f x : variable_name) (e : expression),
   expression_has_type pc (extend (extend gamma f (Fix_t t' t l)) x t') e t
-  -> value_has_type gamma (Fix f x e) (Fix_t t' t l)
+  -> value_has_type gamma (Fix (Fix_t t' t l) f x e) (Fix_t t' t l)
 
 with expression_has_type : label_type -> context -> expression -> type -> Prop :=
 | E_Value : forall (pc : label_type) (gamma : context) (v : value) (t : type),
@@ -69,7 +69,7 @@ with expression_has_type : label_type -> context -> expression -> type -> Prop :
   (guards l t)
   -> expression_has_type pc gamma (If1 v1 e2 e3) t
 | E_Let : forall (pc : label_type) (gamma : context) (x : variable_name) (v : value) (e : expression) (s t : type),
-  (value_has_type gamma (Identifier x) s) /\
+  (value_has_type gamma (Identifier s x) s) /\
   (expression_has_type pc (extend gamma x s) e t)
   -> expression_has_type pc gamma (Let_Bind x v e) t
 | E_Sub : forall (pc : label_type) (gamma : context) (e : expression) (t t' : type),
@@ -81,3 +81,59 @@ with expression_has_type : label_type -> context -> expression -> type -> Prop :
   (expression_has_type High_Label gamma e2 t) /\
   (guards High_Label t)
   -> expression_has_type pc gamma (Expression_Evaluation_Pair e1 e2) t.
+
+(** Utility functions for checking equality and subtyping relations of types. *)
+Definition label_eq (l1 l2 : label_type) : bool :=
+match (l1, l2) with
+| (High_Label, High_Label) => true
+| (Low_Label, Low_Label) => true
+| (High_Label, Low_Label) => false
+| (Low_Label, High_Label) => false
+end.
+
+Definition simple_type_eq (t1 t2 : simple_type) : bool :=
+match (t1, t2) with
+| (Int_t, Int_t) => true
+| (Bottom_t, Bottom_t) => true
+| (Int_t, Bottom_t) => false
+| (Bottom_t, Int_t) => false
+end.
+
+Fixpoint type_eq (t1 t2 : type) : bool :=
+match (t1, t2) with
+| (Simple_Type t1' l1', Simple_Type t2' l2') =>
+  if (label_eq l1' l2') then (simple_type_eq t1' t2') else false
+| (Fix_t _ _ _, Simple_Type _ _) => false
+| (Simple_Type _ _, Fix_t _ _ _) => false
+| (Fix_t t1in t1out l1, Fix_t t2in t2out l2) =>
+  if (label_eq l1 l2) then
+    if (type_eq t1in t2in) then
+      (type_eq t1out t2out)
+      else false
+    else false
+end.
+
+Definition subtype_of (t1 t2 : type) : bool :=
+(** TODO: Write *)
+true.
+
+(** Ugh, this is probably wrong... *)
+Definition type_of_value (gamma : context) (v : value) : type :=
+match v with
+| (Unit t) => t
+| (Integer t n) => t
+| (Value_Evaluation_Pair t v1 v2) => t
+| (Identifier t x) => t
+| (Fix t f x e) => t
+| (Void t) => t
+end.
+
+(** Blarrrrrrrrrrrrrrrrrrrrrg *)
+Fixpoint type_of_expression (pc : label_type) (gamma : context) (e : expression) : option type :=
+match e with
+| (Value v) => Some (type_of_value gamma v)
+| (Let_Bind x v e) => type_of_expression pc (extend gamma x (type_of_value gamma v)) e
+| (If1 v e1 e2) => 
+| (Expression_Evaluation_Pair e1 e2) => 
+| (Application f v) => 
+end.
