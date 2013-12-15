@@ -20,7 +20,7 @@ Require Export identifiers.
   | Fix_t : type -> type -> label_type  -> type.
   
   Inductive value : Type :=
-  | Identifier : number -> value
+  | Identifier : nat -> value
   | Unit :  value
   | Integer : nat -> value
   | Fix : variable_name -> expression -> value 
