@@ -1,7 +1,4 @@
 
-
-Require Export identifiers.
-
   Inductive variable_name : Type :=
   | Var : nat -> variable_name.
 
