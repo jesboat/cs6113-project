@@ -29,8 +29,14 @@ Definition context := variable_name -> option type.
 
 Definition empty : context := (fun _ => None).
 
-Definition extend (Gamma : context) (x:variable_name) (T : type) :=
-  fun x' => if x = x' then Some T else Gamma x'.
+Require Import Coq.Arith.EqNat.
+
+Definition extend (Gamma : context) (x : variable_name) (T : type) :=
+  match x with
+  | Var n => fun x' => match x' with
+                       | Var n' => if beq_nat n n' then Some T else Gamma x'
+                       end
+  end.
 
 Inductive value_has_type : context -> value -> type -> Prop :=
 | V_Unit : forall (gamma : context) (l : label_type),
@@ -45,8 +51,8 @@ Inductive value_has_type : context -> value -> type -> Prop :=
   -> value_has_type gamma v t
 | V_Var : forall (gamma : context) (x : variable_name) (t : type),
   gamma x = Some t
-  -> value_has_type (Identifier x) t
-| V_Abs : forall (gamma : context) (t t' : type) (l pc : label_type) (f x : variable name) (e : expression),
+  -> value_has_type gamma (Identifier x) t
+| V_Abs : forall (gamma : context) (t t' : type) (l pc : label_type) (f x : variable_name) (e : expression),
   expression_has_type pc (extend (extend gamma f (Fix_t t' t l)) x t') e t
   -> value_has_type gamma (Fix f x e) (Fix_t t' t l)
 
@@ -56,12 +62,12 @@ with expression_has_type : label_type -> context -> expression -> type -> Prop :
 | E_App : forall (pc l : label_type) (gamma : context) (f v1 : value) (t1 t2 : type),
   (value_has_type gamma f (Fix_t t1 t2 l)) /\ (value_has_type gamma v1 t1) /\ (guards l t2)
   -> (expression_has_type pc gamma (Application f v1) t2)
-| E_If : forall (pc l : label_type) (gamma : context) (e1 e2 e3 : expression) (t : type),
-  (expression_has_type pc gamma e1 (Simple_Type Int_t l)) /\
+| E_If : forall (pc l : label_type) (gamma : context) (v1 : value) (e2 e3 : expression) (t : type),
+  (value_has_type gamma v1 (Simple_Type Int_t l)) /\
   (expression_has_type (label_join pc l) gamma e2 t) /\
   (expression_has_type (label_join pc l) gamma e3 t) /\
   (guards l t)
-  -> expression_has_type pc gamma (If1 e1 e2 e3) t
+  -> expression_has_type pc gamma (If1 v1 e2 e3) t
 | E_Let : forall (pc : label_type) (gamma : context) (x : variable_name) (v : value) (e : expression) (s t : type),
   (value_has_type gamma (Identifier x) s) /\
   (expression_has_type pc (extend gamma x s) e t)
