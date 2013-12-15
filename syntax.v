@@ -8,11 +8,8 @@ Module CoreMLSyntax.
 
 (*non-racket-dependent *)
 
-  Inductive high_label : Type := 
-  | High_Label_t : high_label.
-  
   Inductive label_type : Type := 
-  | High_Label : high_label -> label_type
+  | High_Label : label_type
   | Low_Label : label_type
 (* proof of correctness for labels will be no occurance of "unassigned" label
    in addition to the standard types-line-up deal.
