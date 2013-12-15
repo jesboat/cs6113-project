@@ -20,7 +20,7 @@
   Inductive value : Type :=
   | Identifier : variable_name -> value
   | Unit :  value
-  | Integer : variable_name -> value
+  | Integer : nat -> value
   | Fix : variable_name -> variable_name -> expression -> value 
   | Void : value
   | Value_Evaluation_Pair : value -> value -> value

@@ -66,7 +66,7 @@
 
 (define (to-coq-val v) 
   (type-case value v
-	[Identifier (v) (string-append " Identifier " (convert-symbol (log-symbol v)))]
+	[Identifier (v) (string-append (string-append " Identifier (" (convert-symbol (log-symbol v))) ")")]
 	[Unit () " Unit "]
 	[Integer (val) (string-append " Integer " (number->string val))]
 	[Fix (arg bod) 
