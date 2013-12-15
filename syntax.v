@@ -10,8 +10,7 @@
 *)
 
   Inductive simple_type : Type :=
-  | Int_t : simple_type
-  | Bottom_t : simple_type.
+  | Int_t : simple_type.
 
   Inductive type : Type :=
   | Simple_Type : simple_type -> label_type -> type
