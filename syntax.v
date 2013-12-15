@@ -24,12 +24,12 @@ Module CoreMLSyntax.
   | Fix_t : type -> type -> label_type  -> type.
   
   Inductive value : Type :=
-  | Identifier : type -> variable_name -> value
-  | Unit :  type -> value
-  | Integer : type -> nat -> value
-  | Fix : type -> variable_name -> expression -> value 
-  | Void : type -> value
-  | Value_Evaluation_Pair : type -> value -> value -> value
+  | Identifier : variable_name -> value
+  | Unit :  value
+  | Integer : nat -> value
+  | Fix : variable_name -> expression -> value 
+  | Void : value
+  | Value_Evaluation_Pair : value -> value -> value
 
   with 
   expression : Type :=
