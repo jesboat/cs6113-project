@@ -2,7 +2,8 @@
 
 Require Export identifiers.
 
-
+  Inductive variable_name : Type :=
+  | Var : nat -> variable_name.
 
   Inductive label_type : Type := 
   | High_Label : label_type
@@ -20,10 +21,10 @@ Require Export identifiers.
   | Fix_t : type -> type -> label_type  -> type.
   
   Inductive value : Type :=
-  | Identifier : nat -> value
+  | Identifier : variable_name -> value
   | Unit :  value
-  | Integer : nat -> value
-  | Fix : nat -> expression -> value 
+  | Integer : variable_name -> value
+  | Fix : variable_name -> variable_name -> expression -> value 
   | Void : value
   | Value_Evaluation_Pair : value -> value -> value
 
@@ -31,7 +32,7 @@ Require Export identifiers.
   expression : Type :=
   | Value : value -> expression 
   | Application : value -> value -> expression
-  | Let_Bind : nat -> value -> expression -> expression
+  | Let_Bind : variable_name -> value -> expression -> expression
   | If1 : value -> expression -> expression -> expression
   | Expression_Evaluation_Pair : expression -> expression -> expression.
 
