@@ -96,7 +96,9 @@
 	  (display-to-file ".
 " "identifiers.v" #:mode 'text #:exists 'append)
 
-      (display "Check ")
+      (display "Require Export syntax.
+
+Check ")
 	  (display ast)
 	  (display ".
 
