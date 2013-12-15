@@ -23,7 +23,7 @@ Require Export identifiers.
   | Identifier : nat -> value
   | Unit :  value
   | Integer : nat -> value
-  | Fix : variable_name -> expression -> value 
+  | Fix : nat -> expression -> value 
   | Void : value
   | Value_Evaluation_Pair : value -> value -> value
 
@@ -31,7 +31,7 @@ Require Export identifiers.
   expression : Type :=
   | Value : value -> expression 
   | Application : value -> value -> expression
-  | Let_Bind : variable_name -> value -> expression -> expression
+  | Let_Bind : nat -> value -> expression -> expression
   | If1 : value -> expression -> expression -> expression
   | Expression_Evaluation_Pair : expression -> expression -> expression.
 
