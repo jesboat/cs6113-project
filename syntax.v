@@ -1,16 +1,12 @@
-Module CoreMLSyntax.
 
 
-(*racket-dependent *)
-  Inductive variable_name : Type := 
-  | x : variable_name
-  | y : variable_name.
+Require Export identifiers.
 
-(*non-racket-dependent *)
+
 
   Inductive label_type : Type := 
   | High_Label : label_type
-  | Low_Label : label_type
+  | Low_Label : label_type.
 (* proof of correctness for labels will be no occurance of "unassigned" label
    in addition to the standard types-line-up deal.
 *)
@@ -40,6 +36,5 @@ Module CoreMLSyntax.
   | Expression_Evaluation_Pair : expression -> expression -> expression.
 
 
-End CoreMLSyntax.
 
 
