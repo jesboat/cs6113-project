@@ -14,7 +14,6 @@ Module CoreMLSyntax.
   Inductive label_type : Type := 
   | High_Label : high_label -> label_type
   | Low_Label : label_type
-  | Unassigned_Label : label_type.
 (* proof of correctness for labels will be no occurance of "unassigned" label
    in addition to the standard types-line-up deal.
 *)
@@ -37,11 +36,11 @@ Module CoreMLSyntax.
 
   with 
   expression : Type :=
-  | Value : type -> value -> expression 
-  | Application : type -> value -> value -> expression
-  | Let_Bind : type -> variable_name -> value -> expression -> expression
-  | If1 : type -> value -> expression -> expression -> expression
-  | Expression_Evaluation_Pair : type -> expression -> expression -> expression.
+  | Value : value -> expression 
+  | Application : value -> value -> expression
+  | Let_Bind : variable_name -> value -> expression -> expression
+  | If1 : value -> expression -> expression -> expression
+  | Expression_Evaluation_Pair : expression -> expression -> expression.
 
 
 End CoreMLSyntax.
