@@ -12,7 +12,6 @@
       | num
       | VOID
       | FUN id RIGHT-ARROW expression
-      | value COMMA value
       | LEFT-ANGLE-BRACKET value PIPE value RIGHT-ANGLE-BRACKET
       | LEFT-PAREN value RIGHT-PAREN
 
@@ -23,5 +22,4 @@
            | LET id EQ value IN expression
            | IF expression THEN expression ELSE expression
            | LEFT-ANGLE-BRACKET expression PIPE expression RIGHT-ANGLE-BRACKET
-           | value LEFT-SQUARE-BRACKET num RIGHT-SQUARE-BRACKET
 

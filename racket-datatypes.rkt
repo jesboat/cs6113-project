@@ -6,10 +6,8 @@
   [Value (val : value)]
   [Application (fun : value) (arg : value) ]
   [Let-Bind (name : symbol) (bind : value) (body : expression)]
-  [Ite (test : expression) (then : expression) (otherwise : expression)]
+  [Ite (test : value) (then : expression) (otherwise : expression)]
   [Expression_Evaluation_Pair (left : expression) (right : expression)]
-  [Project-left (val : value)]
-  [Project-right (val : value)]
   )
 
 (define-type value 
@@ -17,7 +15,6 @@
   [Unit]
   [Integer (val : number)]
   [Fix (arg : symbol) (body : expression) ]
-  [Tuple (left : value) (right : value)]
   [Void]
   [Value_Evaluation_Pair (left : value)  (right : value)]
 )
@@ -51,17 +48,13 @@
 	[Ite 
 	 (test then otherwise)
 	 (stringlist->string
-	  (list "If ("(to-coq-expr test) ") 
+	  (list "If ("(to-coq-val test) ") 
                 ("(to-coq-expr then) ") 
                 ("(to-coq-expr otherwise) ") "))]
 	[Expression_Evaluation_Pair 
 	 (left right)
 	 (stringlist->string
-	  (list "Expression_Evaluation_Pair ("(to-coq-expr left) ") ("(to-coq-expr right) ") "))]
-	[Project-left (v) (stringlist->string 
-					   (list "Project1 (" (to-coq-val v)") "))]
-	[Project-right (v) (stringlist->string 
-					   (list "Project2 (" (to-coq-val v)") "))]))
+	  (list "Expression_Evaluation_Pair ("(to-coq-expr left) ") ("(to-coq-expr right) ") "))]))
 
 (define (to-coq-val v) 
   (type-case value v
@@ -72,10 +65,6 @@
 		 (stringlist->string 
 		  (list 
 		   " Fix ("(log-symbol arg) ") (" (to-coq-expr bod) ") "))]
-	[Tuple (l r ) 
-		   (stringlist->string
-			(list 
-			 "Tuple (" (to-coq-val l)") ("(to-coq-val r) ") "))]
 	[Void () " Void "]
 	[Value_Evaluation_Pair (l r)
 	 (stringlist->string

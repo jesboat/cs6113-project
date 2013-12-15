@@ -61,8 +61,6 @@
 	[(list 'value #f a #f) (to-datastructure a)]
 	[(list 'value false a false b false) 
 	 (Value_Evaluation_Pair (to-datastructure a) (to-datastructure b))]
-	[(list 'value a false b) 
-	 (Tuple (to-datastructure a) (to-datastructure b)) ]
 	[(list 'value false) (Void)]
 	[(list 'value false false) (Unit)]
 	[(list 'expression a b) 
@@ -73,10 +71,6 @@
 	 (Ite (to-datastructure a) (to-datastructure b) (to-datastructure c))]
 	[(list 'expression false a false b false) 
 	 (Expression_Evaluation_Pair (to-datastructure a) (to-datastructure b))]
-	[(list 'expression a false (list 'num b) false)
-	 (cond
-	  [(= b 0) (Project-left (to-datastructure a))]
-	  [(= b 1) (Project-right (to-datastructure a))])]
 	[(list 'value a) (to-datastructure a)]
 	[(list 'expression (cons 'value a)) 
 	 (Value (to-datastructure (cons 'value a)))]
@@ -92,40 +86,23 @@
 (define (parse-and-print s)
   (let ((ast (coq-string s)))
 	(begin
-	  (display 
-	   "Module CoreMLSyntax.
-
-  Inductive variable_name : Type := ")
-	  (map (lambda (x) (display (string-append 
+	  (display-to-file 
+	   "
+  Inductive variable_name : Type := " "identifiers.v" #:mode 'text #:exists 'replace)
+	  (map (lambda (x) (display-to-file (string-append 
 						"
-  | " (string-append x " : variable_name"))))
+  | " (string-append x " : variable_name")) "identifiers.v" #:mode 'text #:exists 'append))
 		   (get-symbols))
-	  (display ".
+	  (display-to-file ".
+" "identifiers.v" #:mode 'text #:exists 'append)
 
-  Inductive value : Type :=
-  | Identifier : variable_name -> value
-  | Unit :  value
-  | Integer : nat -> value
-  | Fix : variable_name -> expression -> value 
-  | Tuple : value -> value -> value
-  | Void : value
-  | Value_Evaluation_Pair : value -> value -> value
-
-  with 
-  expression : Type :=
-  | Value : value -> expression 
-  | Application : value -> value -> expression
-  | Let_Bind : variable_name -> value -> expression -> expression
-  | If : expression -> expression -> expression -> expression
-  |Expression_Evaluation_Pair : expression -> expression -> expression
-  | Project1 : value -> expression
-  | Project2 : value -> expression.
+      (display "Require Export syntax.
 
 Check ")
 	  (display ast)
 	  (display ".
 
-End CoreMLSyntax.
+
 "))))
 
 #|(translate-string "a")
