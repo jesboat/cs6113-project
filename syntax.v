@@ -18,12 +18,12 @@
   | Fix_t : type -> type -> label_type  -> type.
   
   Inductive value : Type :=
-  | Identifier : variable_name -> value
-  | Unit :  value
-  | Integer : nat -> value
-  | Fix : variable_name -> variable_name -> expression -> value 
-  | Void : value
-  | Value_Evaluation_Pair : value -> value -> value
+  | Identifier : type -> variable_name -> value
+  | Unit :  type -> value
+  | Integer : type -> nat -> value
+  | Fix : type -> variable_name -> variable_name -> expression -> value 
+  | Void : type -> value
+  | Value_Evaluation_Pair : type -> value -> value -> value
 
   with 
   expression : Type :=
@@ -32,7 +32,4 @@
   | Let_Bind : variable_name -> value -> expression -> expression
   | If1 : value -> expression -> expression -> expression
   | Expression_Evaluation_Pair : expression -> expression -> expression.
-
-
-
 
