@@ -86,15 +86,16 @@
 (define (parse-and-print s)
   (let ((ast (coq-string s)))
 	(begin
-	  (display-to-file 
-	   "
+      #;(begin
+        (display-to-file 
+         "
   Inductive variable_name : Type := " "identifiers.v" #:mode 'text #:exists 'replace)
-	  (map (lambda (x) (display-to-file (string-append 
-						"
+        (map (lambda (x) (display-to-file (string-append 
+                                           "
   | " (string-append x " : variable_name")) "identifiers.v" #:mode 'text #:exists 'append))
-		   (get-symbols))
-	  (display-to-file ".
-" "identifiers.v" #:mode 'text #:exists 'append)
+             (get-symbols))
+        (display-to-file ".
+" "identifiers.v" #:mode 'text #:exists 'append))
 
       (display "Require Export syntax.
 
