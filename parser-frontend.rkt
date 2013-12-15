@@ -15,7 +15,6 @@
      [(:seq #\V#\O#\I#\D) (token 'VOID)]
      [#\( (token 'LEFT-PAREN)]
      [#\) (token 'RIGHT-PAREN)]
-     [(:seq #\f#\u#\n) (token 'FUN)]
      [(:seq #\-#\>) (token 'RIGHT-ARROW)]
      [(:seq #\l#\e#\t) (token 'LET)]
 	 [#\= (token 'EQ)]
@@ -50,9 +49,9 @@
 
 (define (to-datastructure p)
   (match p
-    [(list 'value false (list 'id a) false b) 
+    [(list 'value (list 'id fun) (list 'id a) false b) 
 	 (let ((c (to-datastructure b)))
-	 (Fix (string->symbol a) c))]
+	 (Fix (string->symbol fun) (string->symbol a) c))]
 	[(list 'value (list 'num a)) (Integer a)]
 	[(list 'value (list 'id a)) (Identifier (string->symbol a))]
 	[(list 'program (cons 'value rst))

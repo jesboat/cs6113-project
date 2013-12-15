@@ -11,7 +11,7 @@
       | LEFT-PAREN RIGHT-PAREN
       | num
       | VOID
-      | FUN id RIGHT-ARROW expression
+      | id id RIGHT-ARROW expression
       | LEFT-ANGLE-BRACKET value PIPE value RIGHT-ANGLE-BRACKET
       | LEFT-PAREN value RIGHT-PAREN
 

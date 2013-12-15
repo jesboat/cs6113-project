@@ -14,7 +14,7 @@
   [Identifier (varname : symbol)]
   [Unit]
   [Integer (val : number)]
-  [Fix (arg : symbol) (body : expression) ]
+  [Fix (name : symbol) (arg : symbol) (body : expression) ]
   [Void]
   [Value_Evaluation_Pair (left : value)  (right : value)]
 )
@@ -69,10 +69,10 @@
 	[Identifier (v) (string-append (string-append " Identifier (" (convert-symbol (log-symbol v))) ")")]
 	[Unit () " Unit "]
 	[Integer (val) (string-append " Integer " (number->string val))]
-	[Fix (arg bod) 
+	[Fix (name arg bod) 
 		 (stringlist->string 
 		  (list 
-		   " Fix ("(convert-symbol (log-symbol arg)) ") (" (to-coq-expr bod) ") "))]
+		   " Fix ("(convert-symbol (log-symbol name)) ") ("(convert-symbol (log-symbol arg)) ") (" (to-coq-expr bod) ") "))]
 	[Void () " Void "]
 	[Value_Evaluation_Pair (l r)
 	 (stringlist->string
