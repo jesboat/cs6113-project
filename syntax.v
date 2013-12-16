@@ -9,13 +9,10 @@
    in addition to the standard types-line-up deal.
 *)
 
-  Inductive simple_type : Type :=
-  | Int_t : simple_type.
-
   Inductive type : Type :=
-  | Simple_Type : simple_type -> label_type -> type
-  | Fix_t : type -> type -> label_type  -> type.
-  
+  | Int_t : label_type -> type
+  | Fix_t : type -> type -> label_type -> type.
+
   Inductive value : Type :=
   | Identifier : type -> variable_name -> value
   | Integer : type -> nat -> value
