@@ -15,7 +15,9 @@ Inductive type_subtype : type -> type -> Prop :=
 | S_Int : forall (l l' : label_type),
   label_subtype l l' -> type_subtype (Int_t l) (Int_t l')
 | S_Abs : forall (t1 t2 t1' t2' : type) (l l' : label_type),
-  (label_subtype l l') /\ (type_subtype t1' t1) /\ (type_subtype t2 t2')
+  (label_subtype l l')
+  -> (type_subtype t1' t1)
+  -> (type_subtype t2 t2')
   -> type_subtype (Fix_t t1 t2 l) (Fix_t t1' t2' l')
 | S_Refl : forall (t1 : type), type_subtype t1 t1.
 
@@ -25,61 +27,73 @@ Inductive guards : label_type -> type -> Prop :=
 | G_Abs : forall (t1 t2 : type) (l l' : label_type),
   label_subtype l l' -> guards l (Fix_t t1 t2 l').
 
-Definition context := variable_name -> option type.
+Inductive context : Type :=
+| empty : context
+| extend : context -> variable_name -> type -> context.
 
-Definition empty : context := (fun _ => None).
+Definition identifier_id (var : variable_name) : nat :=
+match var with
+| Var n => n
+end.
+
+Definition var_name_eq (var1 var2 : variable_name) : bool :=
+beq_nat (identifier_id var1) (identifier_id var2).
+
+Fixpoint find_in_context (gamma : context) (x : variable_name) : option type :=
+match gamma with
+| empty => None
+| extend gamma' x' t => if var_name_eq x x' then Some t else find_in_context gamma' x
+end.
 
 Require Import Coq.Arith.EqNat.
-
-Definition extend (Gamma : context) (x : variable_name) (T : type) :=
-  match x with
-  | Var n => fun x' => match x' with
-                       | Var n' => if beq_nat n n' then Some T else Gamma x'
-                       end
-  end.
 
 Inductive value_has_type : context -> value -> type -> Prop :=
 | V_Int : forall (gamma : context) (l : label_type) (n : nat),
   value_has_type gamma (Integer (Int_t l) n) (Int_t l)
 | V_Bracket : forall (gamma : context) (t : type) (v1 v2 : value),
-  (value_has_type gamma v1 t) /\ (value_has_type gamma v2 t) /\ (guards High_Label t)
+  (value_has_type gamma v1 t)
+  -> (value_has_type gamma v2 t)
+  -> (guards High_Label t)
   -> value_has_type gamma (Value_Evaluation_Pair t v1 v2) t
 | V_Sub : forall (gamma : context) (t t' : type) (v : value),
-  (value_has_type gamma v t') /\ (type_subtype t' t)
+  (value_has_type gamma v t')
+  -> (type_subtype t' t)
   -> value_has_type gamma v t
 | V_Var : forall (gamma : context) (x : variable_name) (t : type),
-  gamma x = Some t
+  find_in_context gamma x = Some t
   -> value_has_type gamma (Identifier t x) t
-| V_Abs : forall (gamma : context) (t t' : type) (l pc : label_type) (f x : variable_name) (e : expression),
+| V_Abs : forall (gamma : context) (t t' : type) (l pc : label_type)
+    (f x : variable_name) (e : expression),
   expression_has_type pc (extend (extend gamma f (Fix_t t' t l)) x t') e t
   -> value_has_type gamma (Fix (Fix_t t' t l) f x e) (Fix_t t' t l)
 
 with expression_has_type : label_type -> context -> expression -> type -> Prop :=
 | E_Value : forall (pc : label_type) (gamma : context) (v : value) (t : type),
-  value_has_type gamma v t -> expression_has_type pc gamma (Value v) t
+  value_has_type gamma v t
+  -> expression_has_type pc gamma (Value v) t
 | E_App : forall (pc l : label_type) (gamma : context) (f v1 : value) (t1 t2 : type),
-  (value_has_type gamma f (Fix_t t1 t2 l)) /\
-  (value_has_type gamma v1 t1) /\
-  (guards l t2)
+  (value_has_type gamma f (Fix_t t1 t2 l))
+  -> (value_has_type gamma v1 t1)
+  -> (guards l t2)
   -> (expression_has_type pc gamma (Application f v1) t2)
 | E_If : forall (pc l : label_type) (gamma : context) (v1 : value) (e2 e3 : expression) (t : type),
-  (value_has_type gamma v1 (Int_t l)) /\
-  (expression_has_type (label_join pc l) gamma e2 t) /\
-  (expression_has_type (label_join pc l) gamma e3 t) /\
-  (guards l t)
+  (value_has_type gamma v1 (Int_t l))
+  -> (expression_has_type (label_join pc l) gamma e2 t)
+  -> (expression_has_type (label_join pc l) gamma e3 t)
+  -> (guards l t)
   -> expression_has_type pc gamma (If1 v1 e2 e3) t
 | E_Let : forall (pc : label_type) (gamma : context) (x : variable_name) (v : value) (e : expression) (s t : type),
-  (value_has_type gamma (Identifier s x) s) /\
-  (expression_has_type pc (extend gamma x s) e t)
+  (value_has_type gamma (Identifier s x) s)
+  -> (expression_has_type pc (extend gamma x s) e t)
   -> expression_has_type pc gamma (Let_Bind x v e) t
 | E_Sub : forall (pc : label_type) (gamma : context) (e : expression) (t t' : type),
-  (expression_has_type pc gamma e t') /\
-  (type_subtype t' t)
+  (expression_has_type pc gamma e t')
+  -> (type_subtype t' t)
   -> expression_has_type pc gamma e t
 | E_Bracket : forall (pc : label_type) (gamma : context) (e1 e2 : expression) (t : type),
-  (expression_has_type High_Label gamma e1 t) /\
-  (expression_has_type High_Label gamma e2 t) /\
-  (guards High_Label t)
+  (expression_has_type High_Label gamma e1 t)
+  -> (expression_has_type High_Label gamma e2 t)
+  -> (guards High_Label t)
   -> expression_has_type pc gamma (Expression_Evaluation_Pair e1 e2) t.
 
 (** Utility functions for checking equality and subtyping relations of types. *)
@@ -155,6 +169,7 @@ match v with
 | (Integer t n) => t
 | (Value_Evaluation_Pair t v1 v2) => t
 | (Identifier t x) => t
+(* I should really double check the type of the expression first... *)
 | (Fix t f x e) => t
 end.
 
@@ -216,3 +231,77 @@ match (type_of_expression pc gamma e) with
 | Some _ => True
 | None => False
 end.
+
+Fixpoint subst_v (v v_replacement : value) (var : variable_name) : value :=
+match v with
+| Identifier _ name =>
+    if var_name_eq var name then v_replacement else v
+| Integer _ _ => v
+| Fix t fun_name param_name expr =>
+    if orb (var_name_eq var fun_name)
+           (var_name_eq var param_name)
+    then v
+    else Fix t fun_name param_name (subst_e expr v_replacement var)
+| Value_Evaluation_Pair t v1 v2 =>
+    Value_Evaluation_Pair t (subst_v v1 v_replacement var)
+                            (subst_v v2 v_replacement var)
+end
+
+with subst_e (e : expression) (v_replacement : value) (var : variable_name) : expression :=
+match e with
+| Value v =>
+    Value (subst_v v v_replacement var)
+| Application v1 v2 =>
+    Application (subst_v v1 v_replacement var) (subst_v v2 v_replacement var)
+| Let_Bind let_var let_val let_exp =>
+    if var_name_eq let_var var
+    then e
+    else Let_Bind let_var
+                  (subst_v let_val v_replacement var)
+                  (subst_e let_exp v_replacement var)
+| If1 if_val true_exp false_exp =>
+    If1 (subst_v if_val v_replacement var)
+        (subst_e true_exp v_replacement var)
+        (subst_e false_exp v_replacement var)
+| Expression_Evaluation_Pair e1 e2 =>
+    Expression_Evaluation_Pair (subst_e e1 v_replacement var)
+                               (subst_e e2 v_replacement var)
+end.
+
+Theorem Lemma_10_val :
+  forall (v v' : value) (s t : type) (gamma : context) (x : variable_name),
+  value_has_type empty v s ->
+  value_has_type (extend gamma x s) v' t ->
+  value_has_type gamma (subst_v v' v x) t.
+Proof.
+  intros v v' s t gamma x VtypedS V'typedT.
+  induction V'typedT.
+  (* Case V-Int is identifier *)
+  simpl. apply V_Int.
+  (* Case V-Bracket *)
+  simpl. apply V_Bracket.
+  (* SCase left *)
+  apply IHV'typedT1.
+  (* SCase right *)
+  apply IHV'typedT2.
+  (* SCase guards *)
+  apply H.
+  (* Case subtype *)
+  apply V_Sub with (t':=t').
+  (* SCase Prove it works for subtype *)
+  apply IHV'typedT.
+  (* SCase Prove subtyping relation *)
+  apply H.
+  (* Case V_Var *)
+  simpl.
+  destruct (var_name_eq x x0) eqn:IdCheck.
+  (* SCase id's are equal *)
+  admit.
+  (* SCase different id's *)
+  admit.
+  (* Case V_Abs *)
+  simpl.
+  destruct (var_name_eq x f || var_name_eq x x0) eqn:CaptureCheck.
+  (* SCase id is equal to one of the argument names *)
+  admit.
+  (* SCase id is not captured by arg names *)
