@@ -2,6 +2,7 @@ Require Export syntax.
 Require Export Arith.
 Require Export Arith.EqNat.  (* Contains [beq_nat], among other things *)
 Require Export SfLib.
+Require Export Rel.
 
 Inductive environment : Type :=
 | Empty_Env : environment
@@ -246,6 +247,9 @@ Inductive step : expression -> expression -> Prop :=
                 Expression_Evaluation_Pair e1 e2 ==> Expression_Evaluation_Pair e1' e2'
   where " t '==>' t' " := (step t t').
 
+Definition stepmany := refl_step_closure step.
+Notation " t '==>*' t' ":= (stepmany t t') (at level 40).
+
 Lemma leftbranch_beta_comm : forall var bound expr, 
          left_branch (beta_reduction var bound expr) = beta_reduction var (left_branch_val bound) (left_branch expr)
 with leftbranch_beta_comm_val : forall var bound val,
@@ -277,7 +281,7 @@ Lemma left_branch_idem : forall e, (left_branch (left_branch e)) = (left_branch 
 Qed.
 
   
-Lemma lemma_2_l:  forall e e1, e ==> e1 -> (left_branch e) ==> (left_branch e1).
+Lemma lemma_2_l:  forall e e1, e ==> e1 -> (left_branch e) ==>* (left_branch e1).
 Proof.
   intros e. functional induction (left_branch e).
   Case "Expression_Evaluation_Pair".
@@ -291,7 +295,7 @@ Proof.
     inversion Hreduces; subst.
     SCase "Beta_Reduction_R".
       rewrite leftbranch_beta_comm.
-      rewrite leftbranch_beta_comm. apply Beta_Reduction_R.
+      rewrite leftbranch_beta_comm. simpl. 
     SCase "Lift_App_R".
       simpl.
       rewrite left_branch_val_idem. 
