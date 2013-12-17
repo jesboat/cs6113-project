@@ -1,6 +1,7 @@
 Require Export syntax.
 Require Export Arith.
 Require Export Arith.EqNat.  (* Contains [beq_nat], among other things *)
+Require Export SfLib.
 
 Inductive environment : Type :=
 | Empty_Env : environment
@@ -58,7 +59,7 @@ with right_branch_val (val : value) {struct val} :=
 
 Function left_branch (expr : expression) {struct expr} := 
   match expr with 
-    | Expression_Evaluation_Pair l r => (left_branch r)
+    | Expression_Evaluation_Pair l r => (left_branch l)
     | Value v => Value (left_branch_val v)
     | Application f a => Application (left_branch_val f) (left_branch_val a)
     | Let_Bind nm vl e => Let_Bind nm (left_branch_val vl) (left_branch e)
@@ -72,7 +73,7 @@ with left_branch_val (val : value) {struct val} :=
     | Integer _ _ => val
     | Void _ => val
     | Fix t f a b => Fix t f a (left_branch b)
-    | Value_Evaluation_Pair t l r => (left_branch_val r)
+    | Value_Evaluation_Pair t l r => (left_branch_val l)
   end.
 
 Fixpoint get_type (val : value) : type := 
@@ -85,13 +86,18 @@ Fixpoint get_type (val : value) : type :=
     | Value_Evaluation_Pair t l r => t
   end.
 
-Fixpoint beta_reduction_values (var : variable_name) (bind : value) (val : value): value :=
+Function beta_reduction_values (var : variable_name) (bind : value) (val : value): value :=
   match val with
     | Identifier _ nm => if (names_equal nm var) then bind else val
+    | Fix t f a b => if (names_equal f var) then val else 
+                       if (names_equal a var) then val else
+                         Fix t f a (beta_reduction var bind b)
+    | Value_Evaluation_Pair t v1 v2 => Value_Evaluation_Pair t (beta_reduction_values var bind v1)
+                                                             (beta_reduction_values var bind v2)
     | _ => val
-  end.
+  end
 
-Fixpoint beta_reduction (var : variable_name) (bind : value) (expr : expression) : expression := 
+with beta_reduction (var : variable_name) (bind : value) (expr : expression) : expression := 
   let beta_reduction_values := (fun val => beta_reduction_values var bind val) in 
   let beta_reduction := (fun val => beta_reduction var bind val) in 
   match expr with
@@ -215,3 +221,121 @@ Fixpoint reduction_rules_env (env : environment) (expr : expression) (recursion_
     | 0 => None (* we will prove that this case never fires *)
   end.
 
+Reserved Notation " t '==>' t' " (at level 40).
+
+Inductive step : expression -> expression -> Prop :=
+| Beta_Reduction_R : forall t f x e v,
+                       (Application (Fix t f x e) v) ==> (beta_reduction x v (beta_reduction f (Fix t f x e) e))
+| If1_R : forall t e1 e2,
+           (If1 (Integer t 1) e1 e2) ==> e1
+| Ifelse_R : forall t v e1 e2,
+               (not (v = (Integer t 1))) -> 
+               (If1 v e1 e2) ==> e2
+| Let_R : forall x v e,
+            (Let_Bind x v e) ==> (beta_reduction x v e)
+| Lift_App_R : forall t v1 v2 v,
+                 (Application (Value_Evaluation_Pair t v1 v2) v)
+                   ==> 
+                   (Expression_Evaluation_Pair (Application v1 (left_branch_val v)) (Application v1 (right_branch_val v)))
+| Lift_Case_R : forall t vl vr e1 e2,
+                  (If1 (Value_Evaluation_Pair t vl vr) e1 e2) 
+                    ==> 
+                    (Expression_Evaluation_Pair 
+                       (If1 vl (left_branch e1) (left_branch e2))
+                       (If1 vr (right_branch e1) (right_branch e2)))
+| Bracket_R : forall e1 e2 e1' e2',
+                e1 ==> e1' -> 
+                e2 ==> e2' ->
+                Expression_Evaluation_Pair e1 e2 ==> Expression_Evaluation_Pair e1' e2'
+  where " t '==>' t' " := (step t t').
+
+Lemma leftbranch_beta_comm : forall var bound expr, 
+         left_branch (beta_reduction var bound expr) = beta_reduction var (left_branch_val bound) (left_branch expr)
+with leftbranch_beta_comm_val : forall var bound val,
+         left_branch_val (beta_reduction_values var bound val) = 
+         beta_reduction_values var (left_branch_val bound) (left_branch_val val).
+Proof.
+  Case "expr". clear leftbranch_beta_comm.
+  intros.
+  induction expr; try (simpl; f_equal; auto).
+   SCase "Let". destruct (names_equal v var); trivial.   
+
+  Case "values". clear leftbranch_beta_comm_val.
+  intros. induction val; try solve [ simpl; f_equal; auto ].
+   SCase "Identifier". simpl; destruct (names_equal v var); trivial.
+   SCase "Fixpoint". 
+     simpl. destruct (names_equal v var); destruct (names_equal v0 var); 
+            try trivial; try (simpl; f_equal; trivial). Qed.
+
+
+
+Lemma left_branch_idem : forall e, (left_branch (left_branch e)) = (left_branch e)
+  with left_branch_val_idem : forall v, (left_branch_val (left_branch_val v)) = (left_branch_val v).
+  Case "expr". clear left_branch_idem.
+  induction e; simpl;
+    repeat first [ rewrite left_branch_val_idem | rewrite IHe | rewrite IHe1 | rewrite IHe2 ]; trivial.
+
+  Case "values". clear left_branch_val_idem.
+  induction v; simpl; try (rewrite left_branch_idem); auto.  
+Qed.
+
+  
+Lemma lemma_2_l:  forall e e1, e ==> e1 -> (left_branch e) ==> (left_branch e1).
+Proof.
+  intros e. functional induction (left_branch e).
+  Case "Expression_Evaluation_Pair".
+    intros e1 Hreduces.
+    inversion Hreduces; subst.
+    simpl. auto. 
+  Case "Value".
+    intros e1 Hreduces. inversion Hreduces.
+  Case "Application".
+    intros e1 Hreduces.    
+    inversion Hreduces; subst.
+    SCase "Beta_Reduction_R".
+      rewrite leftbranch_beta_comm.
+      rewrite leftbranch_beta_comm. apply Beta_Reduction_R.
+    SCase "Lift_App_R".
+      simpl.
+      rewrite left_branch_val_idem. 
+
+  (app (pair thing1 thing2) arg)  ==>  (pair (thing1 arg) (thing2 arg))
+     v                                   v
+  (app thing1 arg)  ==>                (thing1 arg)
+
+(pair 
+
+    subst.
+
+simpl.
+auto.
+ apply IHe0.
+assumption.
+
+    apply IHe0.
+
+
+  induction e; intros enew Hreduces.
+  Case "value".
+    solve [ inversion Hreduces ].
+  Case "application".
+    inversion Hreduces; subst.
+simpl.
+
+    solve by inversion.
+
+
+  intros e e1 Hreduces.
+  induction e.
+  Case "Value".
+    destruct v; solve by inversion.
+  Case "Application".
+    destruct v; try solve by inversion.
+      SCase "fix".
+      simpl. SearchAbout left_branch. inversion Hreduces. subst.
+      
+
+  induction Hreduces.  
+inversion H. 
+  Case "Beta_Reduction". 
+  (* how do i run it *)
