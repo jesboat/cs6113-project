@@ -18,17 +18,20 @@ Fixpoint names_equal (n1 : variable_name) (n2 : variable_name) : bool :=
   end.
 
 (* better plan: no indirection permitted.  env only ever identifier-values to non-identifier values.*)
-Fixpoint find_in_env (key : variable_name) (env : environment) : value := 
+Fixpoint find_in_env (key : variable_name) (env : environment) : (option value) := 
   match env with 
-    | Empty_Env => (Void (Simple_Type Bottom_t Low_Label))
+    | Empty_Env => None
     | Env (vname, val) rst => 
-      if (names_equal key vname) then val
+      if (names_equal key vname) then Some val
       else find_in_env key rst
   end.
 
 Fixpoint reduce_identifier (id : value) (env : environment) : value := 
   match id with
-    | Identifier t v => find_in_env v env
+    | Identifier t v => (match (find_in_env v env) with
+                           | Some v => v
+                           | _ => id
+                        end)
     | _ => id
   end.
 
@@ -50,9 +53,7 @@ Function right_branch (expr : expression) {struct expr} :=
 with right_branch_val (val : value) {struct val} :=
   match val with 
     | Identifier t vn => val
-    | Unit t => val
     | Integer _ _ => val
-    | Void _ => val
     | Fix t f a b => Fix t f a (right_branch b)
     | Value_Evaluation_Pair t l r => (right_branch_val r)
   end.
@@ -69,9 +70,7 @@ Function left_branch (expr : expression) {struct expr} :=
 with left_branch_val (val : value) {struct val} :=
   match val with 
     | Identifier t vn => val
-    | Unit t => val
     | Integer _ _ => val
-    | Void _ => val
     | Fix t f a b => Fix t f a (left_branch b)
     | Value_Evaluation_Pair t l r => (left_branch_val l)
   end.
@@ -79,9 +78,7 @@ with left_branch_val (val : value) {struct val} :=
 Fixpoint get_type (val : value) : type := 
   match val with 
     | Identifier t _ => t
-    | Unit t => t
     | Integer t _ => t
-    | Void t => t
     | Fix t f a b => t
     | Value_Evaluation_Pair t l r => t
   end.
