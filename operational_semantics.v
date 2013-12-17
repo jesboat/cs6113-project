@@ -2,6 +2,7 @@ Require Export syntax.
 Require Export Arith.
 Require Export Arith.EqNat.  (* Contains [beq_nat], among other things *)
 Require Export SfLib.
+Require Export Rel.
 
 Inductive environment : Type :=
 | Empty_Env : environment
@@ -18,17 +19,20 @@ Fixpoint names_equal (n1 : variable_name) (n2 : variable_name) : bool :=
   end.
 
 (* better plan: no indirection permitted.  env only ever identifier-values to non-identifier values.*)
-Fixpoint find_in_env (key : variable_name) (env : environment) : value := 
+Fixpoint find_in_env (key : variable_name) (env : environment) : (option value) := 
   match env with 
-    | Empty_Env => (Void (Simple_Type Bottom_t Low_Label))
+    | Empty_Env => None
     | Env (vname, val) rst => 
-      if (names_equal key vname) then val
+      if (names_equal key vname) then Some val
       else find_in_env key rst
   end.
 
 Fixpoint reduce_identifier (id : value) (env : environment) : value := 
   match id with
-    | Identifier t v => find_in_env v env
+    | Identifier t v => (match (find_in_env v env) with
+                           | Some v => v
+                           | _ => id
+                        end)
     | _ => id
   end.
 
@@ -50,9 +54,7 @@ Function right_branch (expr : expression) {struct expr} :=
 with right_branch_val (val : value) {struct val} :=
   match val with 
     | Identifier t vn => val
-    | Unit t => val
     | Integer _ _ => val
-    | Void _ => val
     | Fix t f a b => Fix t f a (right_branch b)
     | Value_Evaluation_Pair t l r => (right_branch_val r)
   end.
@@ -69,9 +71,7 @@ Function left_branch (expr : expression) {struct expr} :=
 with left_branch_val (val : value) {struct val} :=
   match val with 
     | Identifier t vn => val
-    | Unit t => val
     | Integer _ _ => val
-    | Void _ => val
     | Fix t f a b => Fix t f a (left_branch b)
     | Value_Evaluation_Pair t l r => (left_branch_val l)
   end.
@@ -79,9 +79,7 @@ with left_branch_val (val : value) {struct val} :=
 Fixpoint get_type (val : value) : type := 
   match val with 
     | Identifier t _ => t
-    | Unit t => t
     | Integer t _ => t
-    | Void t => t
     | Fix t f a b => t
     | Value_Evaluation_Pair t l r => t
   end.
@@ -249,6 +247,9 @@ Inductive step : expression -> expression -> Prop :=
                 Expression_Evaluation_Pair e1 e2 ==> Expression_Evaluation_Pair e1' e2'
   where " t '==>' t' " := (step t t').
 
+Definition stepmany := refl_step_closure step.
+Notation " t '==>*' t' ":= (stepmany t t') (at level 40).
+
 Lemma leftbranch_beta_comm : forall var bound expr, 
          left_branch (beta_reduction var bound expr) = beta_reduction var (left_branch_val bound) (left_branch expr)
 with leftbranch_beta_comm_val : forall var bound val,
@@ -280,7 +281,7 @@ Lemma left_branch_idem : forall e, (left_branch (left_branch e)) = (left_branch 
 Qed.
 
   
-Lemma lemma_2_l:  forall e e1, e ==> e1 -> (left_branch e) ==> (left_branch e1).
+Lemma lemma_2_l:  forall e e1, e ==> e1 -> (left_branch e) ==>* (left_branch e1).
 Proof.
   intros e. functional induction (left_branch e).
   Case "Expression_Evaluation_Pair".
@@ -294,7 +295,7 @@ Proof.
     inversion Hreduces; subst.
     SCase "Beta_Reduction_R".
       rewrite leftbranch_beta_comm.
-      rewrite leftbranch_beta_comm. apply Beta_Reduction_R.
+      rewrite leftbranch_beta_comm. simpl. 
     SCase "Lift_App_R".
       simpl.
       rewrite left_branch_val_idem. 
