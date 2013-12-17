@@ -268,6 +268,61 @@ match e with
                                (subst_e e2 v_replacement var)
 end.
 
+Inductive appears_free_in_value : variable_name -> value -> Prop :=
+| afiv_var : forall (x : variable_name) (t : type),
+    appears_free_in_value x (Identifier t x)
+| afiv_fix : forall (x f y : variable_name) (e : expression) (t1 t2 : type) (l : label_type),
+    x <> y
+    -> x <> f
+    -> appears_free_in_expression x e
+    -> appears_free_in_value x (Fix (Fix_t t1 t2 l) f y e)
+| afiv_bracket_left : forall (x : variable_name) (v1 v2 : value) (t : type),
+    appears_free_in_value x v1
+    -> appears_free_in_value x (Value_Evaluation_Pair t v1 v2)
+| afiv_bracket_right : forall (x : variable_name) (v1 v2 : value) (t : type),
+    appears_free_in_value x v2
+    -> appears_free_in_value x (Value_Evaluation_Pair t v1 v2)
+
+with appears_free_in_expression : variable_name -> expression -> Prop :=
+| afie_var : forall (x : variable_name) (v : value),
+    appears_free_in_value x v
+    -> appears_free_in_expression x (Value v)
+| afie_app1 : forall (x : variable_name) (v1 v2 : value),
+    appears_free_in_value x v1
+    -> appears_free_in_expression x (Application v1 v2)
+| afie_app2 : forall (x : variable_name) (v1 v2 : value),
+    appears_free_in_value x v2
+    -> appears_free_in_expression x (Application v1 v2)
+| afie_let1 : forall (x y : variable_name) (v : value) (e : expression),
+    x <> y
+    -> appears_free_in_value x v
+    -> appears_free_in_expression x (Let_Bind y v e)
+| afie_let2 : forall (x y : variable_name) (v : value) (e : expression),
+    x <> y
+    -> appears_free_in_expression x e
+    -> appears_free_in_expression x (Let_Bind y v e)
+| afie_iftest : forall (x : variable_name) (v : value) (et ef : expression),
+    appears_free_in_value x v
+    -> appears_free_in_expression x (If1 v et ef)
+| afie_iftrue : forall (x : variable_name) (v : value) (et ef : expression),
+    appears_free_in_expression x et
+    -> appears_free_in_expression x (If1 v et ef)
+| afie_iffalse : forall (x : variable_name) (v : value) (et ef : expression),
+    appears_free_in_expression x ef
+    -> appears_free_in_expression x (If1 v et ef)
+| afie_bracket_left : forall (x : variable_name) (e1 e2 : expression),
+    appears_free_in_expression x e1
+    -> appears_free_in_expression x (Expression_Evaluation_Pair e1 e2)
+| afie_bracket_right : forall (x : variable_name) (e1 e2 : expression),
+    appears_free_in_expression x e2
+    -> appears_free_in_expression x (Expression_Evaluation_Pair e1 e2).
+
+Definition closed_val (v : value) :=
+forall (x : variable_name), ~appears_free_in_value x v.
+
+Definition closed_exp (e : expression) :=
+forall (x : variable_name), ~appears_free_in_expression x e.
+
 Theorem Lemma_10_val :
   forall (v v' : value) (s t : type) (gamma : context) (x : variable_name),
   value_has_type empty v s ->
