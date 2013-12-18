@@ -222,7 +222,7 @@ Fixpoint reduction_rules_env (env : environment) (expr : expression) (recursion_
 Reserved Notation " t '==>' t' " (at level 40).
 
 Inductive step : expression -> expression -> Prop :=
-| Subst_R : forall t f x e v,
+| Beta_Reduction_R : forall t f x e v,
                        (Application (Fix t f x e) v) ==> (subst x v (subst f (Fix t f x e) e))
 | If1_R : forall t e1 e2,
            (If1 (Integer t 1) e1 e2) ==> e1
@@ -338,10 +338,10 @@ Proof.
   Case "Application".
     intros e1 Hreduces.    
     inversion Hreduces; subst.
-    SCase "Subst_R".
+    SCase "Beta_Reduction_R".
       rewrite leftbranch_beta_comm.
       rewrite leftbranch_beta_comm. simpl. 
-      pose proof (Subst_R t f0 x (left_branch e) (left_branch_val a)) as BR. 
+      pose proof (Beta_Reduction_R t f0 x (left_branch e) (left_branch_val a)) as BR. 
       apply step_implies_stepmany in BR. apply BR.
     SCase "Lift_App_R".
       simpl.
