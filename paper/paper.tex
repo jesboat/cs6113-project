@@ -212,7 +212,8 @@ the branches, as shown in rules \ref{eq:bracket-left} and
 expression, passing the appropriate branch of the bracketed subvalue to each
 branch of the resulting expression, as shown in rules \ref{eq:lift-app} and
 \ref{eq:lift-if}.  In these rules, we use the notation $\lift{x}_i$ to denote
-the left ($i = 1$) or right ($i = 2$) branch of a bracketed expression or value.
+the left ($i = 1$) or right ($i = 2$) branch of a bracketed expression or value
+$x$.
 
 We prove soundness and completeness lemmas for these rules in
 Section~\ref{sec:proof}.
@@ -228,8 +229,13 @@ However, for the sake of simplicity, we decided to concern ourselves with only
 confidentiality at first}  Data can only be affected by items at the same label
 or lower (so high data can not affect low labelled data).
 
+\textbf{TODO: Give definition of types in the language and discuss stuff that
+was dropped from \origLang}
+
 The language's type system includes subtyping, which allows data that have a
-lower label to flow into higher labelled data.  The rules for subtyping are
+lower label to flow into higher labelled data.  We use the notatoin $x \leq y$
+to denote that $x$ is a subtype of $y$, whether both $x$ and $y$ are labels or
+types (as long as both are the same kind of value).  The rules for subtyping are
 given in Figure~\ref{fig:subtype_rules}.  Rule \textsc{S-Int} states that
 integers are subtypes of integers with equivalent or higher labels in the label
 lattice.  Similarly, rule \textsc{S-Abs} gives the standard subtyping
@@ -259,13 +265,13 @@ relationship for functions along with the same label relation.
   \label{fig:subtype_rules}
 \end{figure}
 
-For the sake of being able to discuss how strong labels are, we follow the
-example of Simonet and Pottier~\cite{InfoFlowML} and define a ``guards''
-relation between labels and types, denoted $l \guards t$, which states that the
-label $l$ is at least as restrictive as the label on the type $t$.  In other
-words, this requires that the type has at least $l$ for it's security label.
-The two rules regarding this relationships for both types in our language are
-given in Figure~\ref{fig:guard_rules}.
+For the sake of being able to discuss how strong labels are in relation to a
+type, we follow the example of Simonet and Pottier~\cite{InfoFlowML} and define
+a ``guards'' relation between labels and types, denoted $l \guards t$, which
+states that the label $l$ is at least as restrictive as the label on the type
+$t$.  In other words, this requires that the type has at least $l$ for it's
+security label.  The two rules regarding this relationships for both types in
+our language are given in Figure~\ref{fig:guard_rules}.
 
 \begin{figure}[h!]
   \begin{mathpar}
@@ -289,8 +295,10 @@ given in Figure~\ref{fig:guard_rules}.
   \label{fig:guard_rules}
 \end{figure}
 
-Figure~\ref{fig:value_types} includes typing judgements for values and
-Figure~\ref{fig:expr_types} includes typing judgements for expressions.
+Figure~\ref{fig:value_types} includes typing judgements for values in the
+language, which are mostly straight forward with the exception of
+\textsc{V-Bracket}, which we discuss below along with the type rules for
+expressions.
 
 \begin{figure}[h!]
   \begin{mathpar}
@@ -325,6 +333,29 @@ Figure~\ref{fig:expr_types} includes typing judgements for expressions.
   \caption{Typing judgements for values in \langName.}
   \label{fig:value_types}
 \end{figure}
+
+The typing rules for expressions in the language are given in
+Figure~\ref{fig:expr_types}.  Unlike a typical typing judgment, we include an
+additional piece of context information, the $pc$, which is a label that
+describes what level of label can influence the control structure decisions to
+reach the current expression in the program.  This is a standard extension for
+languages with information flow types, like Jif.
+
+The interesting rules in the type system are \textsc{V-Bracket},
+\textsc{E-Bracket}, and \textsc{E-If}.  \textsc{E-If} is a standard rule for
+information flow type systems, stating that the type determinations for each
+branch must have a $pc$ equivalent to the security of the original $pc$ along
+with the security of the label on the value in the test, $l$.
+
+\textsc{V-Bracket} and \textsc{E-Bracket} both require that there exists a label
+from the set $H$ which representes an upward closed sublattice of the labels in
+the system representing what is considered to be ``high'' security for the
+purposes of the proof of noninterference, discussed later.  These rules require
+that the types of each branch of a bracketed value or expression can be typed
+with a high security label.  Furthermore, \textsc{E-Bracket} requires that the
+$pc$ of the subexpressions must be at least as high as this same label,
+requiring that we treat everything in the subexpression as affected by high
+security information.
 
 \begin{figure}[h!]
   \begin{mathpar}
@@ -390,9 +421,6 @@ Figure~\ref{fig:expr_types} includes typing judgements for expressions.
   \label{fig:expr_types}
 \end{figure}
 
-\textbf{TODO: Talk more about the rules and what they're doing.  Specifically,
-discuss what the heck H and pc are doing.}
-
 \section{Proof of Noninterference}
 \label{sec:proof}
 
@@ -404,8 +432,12 @@ language.  Since \langName is a stripped down version of \origLang, the proofs
 will look like a simplified version of the proofs found in Pottier and Simonet's
 paper~\cite{InfoFlowML}.
 
-\textbf{TODO: Add in text between lemmas and theorems discussing what each one
-is at a high level.}
+We start with soundness and completeness lemmas for the operational semantics,
+showing that this language can accurately describe the process of evaluating two
+different runs of a language where bracketed expressions are high security
+values.  Specifically, the image of a valid reduction of an expression is also a
+valid reduction and if both runs of a program evaluate to an answer, then so can
+the bracketed expression in \langName.
 
 \begin{lemma}[Soundness]
   \label{lem:soundness}
@@ -462,6 +494,10 @@ is at a high level.}
   \textbf{TODO}
 \end{proof}
 
+Next, we prove lemmas related to the type system.  We start with a lemma showing
+that $\guards$ interacts well with subtyping and a weakening lemma, showing that
+anything typed at a given $pc$ can be typed at a lower $pc'$ as well.
+
 \begin{lemma}
   \label{lem:guard_subtype}
   If $l' \leq l$ and $l \guards t$ and $t \leq t'$, then $l' \guards t'$.
@@ -484,6 +520,10 @@ is at a high level.}
   when $pc$ is lowered.
 \end{proof}
 
+We now prove a projection lemma, showing that if a top level expression or value
+is well typed, so must either projection of that expression or value to one
+program run or another.
+
 \begin{lemma}[Projection]
   \label{lem:projection}
   Let $i \in \{1, 2\}$.  If $\typeRule{\Gamma}{v}{t}$ then
@@ -499,6 +539,10 @@ is at a high level.}
   typing judgements for both branches.
 \end{proof}
 
+Below is a lemma showing that if a bracketed expression is well typed, then
+there must exist a high security label to use for the types and $pc$ of both
+branches.
+
 \begin{lemma}[Guard]
   \label{lem:guard}
   If $\typeRule{\Gamma}{< v_1 | v_2 >}{t}$ then there exists $pc' \in H$ s.t.
@@ -510,6 +554,8 @@ is at a high level.}
   derivation can always end with \textsc{V-Bracket}, which has the premises $pc'
   \in H$ and $pc' \guards t$.
 \end{proof}
+
+Here we prove a standard substitution lemma for the type system.
 
 \begin{lemma}[Substitution]
   \label{lem:stuck_bracket}
@@ -574,6 +620,10 @@ is at a high level.}
   \end{case}
 \end{proof}
 
+Finally, we prove one final lemma and the noninterference theorem.  The lemma
+shows that if an expression is typed with a low security label, then both
+projections (so the value in either run of the program) are equivalent.
+
 \begin{lemma}
   Let $H$ be an upward-closed subset of the label lattice $\mathcal{L}$.  Let $l
   \not\in H$.  If, using $H$ for the set of high labels, $\typeRule{
@@ -582,6 +632,12 @@ is at a high level.}
 \begin{proof}
   \textbf{TODO}
 \end{proof}
+
+Finally, the noninteference theorem shows that if we have an expression that is
+typed with a low label, then replacing any bracketed value in the expression
+with either projection will result in the same value for the overall expression.
+In other words, if we vary any high security item in a low security expression,
+the value must not be affected.
 
 \begin{thm}[Noninterference]
   Choose $l, h \in \mathcal{L}$ such that $h \not\leq l$.  Let $h \guards t$.
