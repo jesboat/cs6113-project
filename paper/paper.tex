@@ -28,11 +28,12 @@
 \abstract
 
 In this paper we discuss our experience trying to mechanize a proof of
-noninterference for a simple language with security labels, \langName.  Although
-we did not complete the full noninterference proof because we ran out of time,
-we were able to find small inaccuracies and subtleties in the proofs from the
-paper we based our proof on.  We discuss what would be involved in completing
-the proof and how this relates to other work.
+noninterference for a simple language with security labels, \langName.  This
+marks the first step towards writing a verified compiler for a language with
+information flow types.  Although we did not complete the full noninterference
+proof because we ran out of time, we were able to find small inaccuracies and
+subtleties in the proofs from the paper we based our proof on.  We discuss what
+would be involved in completing the proof and how this relates to other work.
 
 \section{Introduction}
 
@@ -99,12 +100,15 @@ noninterference.  In order to mechanize a proof of noninterference for a
 language closer to \origLang, it would require simply adding mechanized proofs
 for the additional cases where appropriate.
 
-\textbf{TODO: Talk about what the bracketed expressions and values are.}
-
 Furthermore, primarily due to a matter of taste, we decided to replace the
 \textsf{case} construct from \origLang for an \textsf{if} construct, which
 evaluates the first expression if the test evaluates to 1 and evaluates to the
 second expression otherwise.
+
+\langName, like \origLang, includes angle bracketed expressions, which represent
+values or expressions which could differ between two runs of the program.  As we
+will see when discussing the type system, this corresponds to values and
+expressions that have high security labels on their types.
 
 Through these changes, our language has the syntax shown in
 Figure~\ref{fig:syntax}.  As shown, final states, answers, in the language are
@@ -116,7 +120,7 @@ now simple values because there are no exceptions.
     \: <v | v> \\
     a & ::= v \tag{answers} \: | \: <a | a> \\
     e & ::= a \: | \: v v \: | \: \textsf{if } v \: e \: e \: | \: \textsf{let
-    } x := v \textsf{ in } e \tag{expressions} \: | \: <e | e> \\
+    } x := v \textsf{ in } e \tag{expressions} \: | \: <e | e>
   \end{align}
   \caption{Syntax of \langName}
   \label{fig:syntax}
@@ -130,9 +134,8 @@ type system for the language.
 \langName has an operational semantics that should be familiar to the reader who
 has seen a single step semantics for a basic lambda calculus.  The interesting
 additions are the same as those in \origLang, where there are additional rules
-for handling the bracketed values.
-
-\textbf{TODO: Talk about what the rules do at a high level.}
+for handling the bracketed values.  The reduction rules for the semantics are
+given in Figure~\ref{fig:operational_semantics}.
 
 \begin{figure}[h!]
   Basic reductions
@@ -202,6 +205,17 @@ for handling the bracketed values.
   \caption{Operational semantics for \langName.}
   \label{fig:operational_semantics}
 \end{figure}
+
+At a high level, these bracketed expressions are evaluated by evaluating one of
+the branches, as shown in rules \ref{eq:bracket-left} and
+\ref{eq:bracket-right}, or by expanding the brackets around the parent
+expression, passing the appropriate branch of the bracketed subvalue to each
+branch of the resulting expression, as shown in rules \ref{eq:lift-app} and
+\ref{eq:lift-if}.  In these rules, we use the notation $\lift{x}_i$ to denote
+the left ($i = 1$) or right ($i = 2$) branch of a bracketed expression or value.
+
+We prove soundness and completeness lemmas for these rules in
+Section~\ref{sec:proof}.
 
 \subsection{Type System}
 
