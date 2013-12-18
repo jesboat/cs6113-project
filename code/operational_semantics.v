@@ -236,7 +236,7 @@ Inductive step : expression -> expression -> Prop :=
                  (Application (Value_Evaluation_Pair t v1 v2) v)
                    ==> 
                    (Expression_Evaluation_Pair (Application v1 (left_branch_val v)) (Application v1 (right_branch_val v)))
-| Lift_Case_R : forall t vl vr e1 e2,
+| Lift_If_R : forall t vl vr e1 e2,
                   (If1 (Value_Evaluation_Pair t vl vr) e1 e2) 
                     ==> 
                     (Expression_Evaluation_Pair 
@@ -407,7 +407,7 @@ Lemma lemma_3_micro : forall e,
       SCase "Integer". compare n 1; intro Hn1; subst.
         SSCase "true". econstructor. apply If1_R.
         SSCase "false". econstructor. apply Ifelse_R. intros. congruence. intros; congruence.
-      SCase "Value_Evaluation_Pair". econstructor. apply Lift_Case_R. 
+      SCase "Value_Evaluation_Pair". econstructor. apply Lift_If_R. 
     Case "Expression_Evaluation_Pair". 
       specialize (Hnotpair e1 e2). congruence.
 Qed.
