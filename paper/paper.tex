@@ -115,7 +115,7 @@ Through these changes, our language has the syntax shown in
 Figure~\ref{fig:syntax}.  As shown, final states, answers, in the language are
 now simple values because there are no exceptions.
 
-\begin{figure}[h!]
+\begin{figure}[t]
   \begin{align}
     v & ::= x \: | \: k \: | \: \textsf{fix} f . \lambda x . e \tag*{ } \\
     v' & ::= v \: | \: <v | v> \tag{values}\\
@@ -235,7 +235,7 @@ decided to concern ourselves with only confidentiality at first}  Data can only
 be affected by items at the same label or lower (so high data can not affect low
 labelled data).
 
-\begin{figure}[h!]
+\begin{figure}[t]
   \begin{align*}
     t ::= int^l \: | \: (t -> t)^l
   \end{align*}
@@ -259,7 +259,7 @@ integers are subtypes of integers with equivalent or higher labels in the label
 lattice.  Similarly, rule \textsc{S-Abs} gives the standard subtyping
 relationship for functions along with the same label relation.
 
-\begin{figure}[h!]
+\begin{figure}[t]
   \begin{mathpar}
     \infer[S-Int]
     {
@@ -291,7 +291,7 @@ $t$.  In other words, this requires that the type has at least $l$ for it's
 security label.  The two rules regarding this relationships for both types in
 our language are given in Figure~\ref{fig:guard_rules}.
 
-\begin{figure}[h!]
+\begin{figure}[t]
   \begin{mathpar}
     \infer[G-Int]
     {
@@ -318,7 +318,7 @@ language, which are mostly straight forward with the exception of
 \textsc{V-Bracket}, which we discuss below along with the type rules for
 expressions.
 
-\begin{figure}[h!]
+\begin{figure*}[t]
   \begin{mathpar}
     \infer[V-Int]
     { }
@@ -350,7 +350,7 @@ expressions.
   \end{mathpar}
   \caption{Typing judgements for values in \langName.}
   \label{fig:value_types}
-\end{figure}
+\end{figure*}
 
 The typing rules for expressions in the language are given in
 Figure~\ref{fig:expr_types}.  Unlike a typical typing judgment, we include an
@@ -375,7 +375,7 @@ $pc$ of the subexpressions must be at least as high as this same label,
 requiring that we treat everything in the subexpression as affected by high
 security information.
 
-\begin{figure}[h!]
+\begin{figure*}[t]
   \begin{mathpar}
     \infer[E-Value]
     {
@@ -437,7 +437,7 @@ security information.
   \end{mathpar}
   \caption{Typing judgements for expressions in \langName.}
   \label{fig:expr_types}
-\end{figure}
+\end{figure*}
 
 \section{Proof of Noninterference}
 \label{sec:proof}
