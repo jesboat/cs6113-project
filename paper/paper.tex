@@ -12,6 +12,7 @@
 \newcommand{\typeRule}[3]{#1 \vdash #2 \colon #3}
 \newcommand{\guards}[0]{\lhd}
 \newcommand{\lift}[1]{\lfloor #1 \rfloor}
+\newcommand{\todo}[1]{\textbf{TODO: #1}}
 
 \theoremstyle{plain}
 \newtheorem{thm}{Theorem}
@@ -116,13 +117,17 @@ now simple values because there are no exceptions.
 
 \begin{figure}[h!]
   \begin{align}
-    v & ::= x \: | \: k \: | \: \textsf{fix} f . \lambda x . e \tag{values} \: |
-    \: <v | v> \\
-    a & ::= v \tag{answers} \: | \: <a | a> \\
+    v & ::= x \: | \: k \: | \: \textsf{fix} f . \lambda x . e \tag*{ } \\
+    v' & ::= v \: | \: <v | v> \tag{values}\\
+    a & ::= v \tag*{ } \\
+    a' & ::= a \: | \: <a | a> \tag{answers} \\
     e & ::= a \: | \: v v \: | \: \textsf{if } v \: e \: e \: | \: \textsf{let
-    } x := v \textsf{ in } e \tag{expressions} \: | \: <e | e>
+    } x := v \textsf{ in } e \tag*{ } \\
+    e' & ::= e \: | \: <e | e> \tag{expressions}
   \end{align}
-  \caption{Syntax of \langName}
+  \caption{Syntax of \langName.  The prime variants are the full class of
+  expressions, values, and answers.  This construction avoids allowing nested
+  branching values.}
   \label{fig:syntax}
 \end{figure}
 
@@ -504,7 +509,19 @@ the bracketed expression in \langName.
   answer $a$ such that $e \to^* a$.
 \end{lemma}
 \begin{proof}
-  \textbf{TODO}
+  First, we establish that if $\lift{e}_i$ reduces to an answer in a finite
+  number of steps, then $e$ does not have an infinite reduction sequence.  The
+  only way this could occur is if $e$ was infinitely reduced over lift rules,
+  because otherwise, since the only reductions on $e$ that correspond to 0
+  reductions on either projection are lift reduction rules.  But as we can see
+  from inspecting the lift reduction rules, we cannot continuously apply these
+  rules exclusively.  Thus, we can conclude that $e$ does not have an infinite
+  series of reduction steps that can be applied to it.
+
+  As a result, we know that $e$ reduces to an answer, because otherwise it would
+  be stuck and this would mean that one of the projections is also stuck by
+  Lemma~\ref{lem:bracket_stuck}, a contradicton.  Thus, we know that if both
+  projections step to an answer, so must the original expression.
 \end{proof}
 
 Next, we prove lemmas related to the type system.  We start with a lemma showing
@@ -633,17 +650,51 @@ Here we prove a standard substitution lemma for the type system.
   \end{case}
 \end{proof}
 
+The following lemma asserts that if a value is well typed, the expression
+containing just that value is also well typed.
+
+\begin{lemma}[Value]
+  \label{lem:value}
+  $\typeRule{pc}{v}{t}$ implies $\typeRule{ }{v}{t}$
+\end{lemma}
+\begin{proof}
+  By induction on the proof of $\typeRule{pc}{v}{t}$.  The cases are either that
+  we have \textsc{E-Value}, where we're done, \textsc{E-Sub}, in which case we
+  apply the inductive hypothesis and the rule \textsc{V-Sub}, or we have
+  \textsc{E-Bracket}, which is proved by the inductive hypothesis and
+  \textsc{V-Bracket}.
+\end{proof}
+
+We also prove a subject reduction lemma, allowing us to assert that if an
+expression is well typed and there is a reduction that can apply to it, then the
+reduced form is also well typed, with the same type.
+
+\begin{lemma}[Subject Reduction]
+  \label{lem:subj_red}
+  Let $e \to e'$.  Assume $\typeRule{pc}{e}{t}$ and $pc \in H$ for all $i \in
+  \{1, 2\}$.  Then $\typeRule{pc}{e'}{t}$.
+\end{lemma}
+\begin{proof}
+  \todo{}
+\end{proof}
+
 Finally, we prove one final lemma and the noninterference theorem.  The lemma
 shows that if an expression is typed with a low security label, then both
 projections (so the value in either run of the program) are equivalent.
 
 \begin{lemma}
+  \label{lem:final_support}
   Let $H$ be an upward-closed subset of the label lattice $\mathcal{L}$.  Let $l
   \not\in H$.  If, using $H$ for the set of high labels, $\typeRule{
   }{e}{\textsf{int}^l}$ and $e \to^* v$ then $\lift{v}_1 = \lift{v}_2$.
 \end{lemma}
 \begin{proof}
-  \textbf{TODO}
+  By Lemma~\ref{lem:subj_red} and \ref{lem:value}, we know that $\typeRule{
+  }{v}{\textsf{int}^l}$ holds.  Since the type is $\textsf{int}^l$, we know that
+  $v$ is either $k$ or $< k_1 | k_2 >$.  However, we know that if it were the
+  latter, then by \textsc{V-Bracket} this would imply there is an $l' \leq l$
+  such that $l' \in H$, a contradiction.  Thus, $v$ must be of the form $k$
+  which is the same under either projection.
 \end{proof}
 
 Finally, the noninteference theorem shows that if we have an expression that is
@@ -659,42 +710,84 @@ the value must not be affected.
   \Leftarrow v_i] \to^* v_i'$ hold, then $v_1' = v_2'$.
 \end{thm}
 \begin{proof}
-  \textbf{TODO}
+  Let $H$ be the upward closure of $\{h\}$ and $v = < v_1 | v_2 >$, since other
+  $v$ would be immediately uninteresting.  By \textsc{V-Bracket}, we know that
+  $\typeRule{ }{v}{t}$ holds given the assumptions.
+  By Lemma~\ref{lem:substitution}, we have $\typeRule{ }{e[x \Leftarrow
+  v]}{\textsf{int}^l}$.  By Lemma~\ref{lem:final_support}, we know that
+  $\lift{e[x \Leftarrow v]}_i = e[x \Leftarrow \lift{v}_i]$, which under the
+  current assumptions reduces to $v_i$.  By Lemma~\ref{lem:completeness} we know
+  that there is an answer $a$ such that $e[x \Leftarrow v] ->^* a$.  By
+  Lemma~\ref{lem:soundness}, $\lift{a}_i = v_i'$ for all $i$ which means that
+  $a$ is a value.  Then, we know by Lemma~\ref{lem:final_support} that $v_1' =
+  v_2'$.
 \end{proof}
 
 \section{Mechanizing Proofs}
 \label{sec:mechanizing}
 
-Talk about what did/should have been mechanized.  Talk about troubles and/or
-interesting bits here.  Might point out here that we're fairly certain that we
-found an inaccuracy in the original paper.
+As mentioned above, we unfortunately were unable to complete our noninterference
+proof in Coq by the time of this report.  Given more time, we are confident that
+this could be completed however.  So far, we have proven the first few lemmas
+described in Section~\ref{sec:proof}.  This was much more difficult than the
+short natural language proofs would suggest, due to a combination of the
+stricter format required by Coq and the number of items that are elided in the
+proofs because they were considered trivial or obvious.
+
+We found that the process of mechanizing the lemmas that we proved was a useful
+exercise in checking our understanding of our language, statements, and the work
+of Simonet and Pottier which we based our approach off of.  We found ourselves
+often surprised by the number of items that were elided by the proofs in the
+paper.  For example, the proof of Lemma~\ref{lem:soundness} is one line of
+natural languae but turned out to be 40 lines of Coq code, not including all of
+the supporting definitions and rules.
+
+Our proof of Lemma~\ref{lem:soundness} actually turned out to be instructive
+because it forced us to recognize that the original formulation in Simonet and
+Pottier's paper on \origLang~\cite{InfoFlowML} wasn't quite correct.
+Specifically, it is entirely possible that a step in the operational semantics
+does not translate to a step in the operational semantics under either
+projection, as in the case of the \ref{eq:lift-app} rule, where $\lift{e}_i$ and
+$\lift{e'}_i$ are identical.  Luckily, we are fairly confident, given that we
+were still able to prove Lemma~\ref{lem:bracket_stuck} despite this change, that
+this is not a critical error in the original paper.
+
+\todo{More.}
 
 \section{Related Work}
 \label{sec:related}
 
-Discuss various references related to our project.
+This project is related to a variety of previous work, specifically in the realm
+of security and verified proofs and programs.  We are following in the footsteps
+of verified languages and compilers, which focus on writing programs and
+language specs that are verified to have the properties the authors want by
+providing the proofs of these properties on the
+definitions~\cite{strecker2002formal,leinenbach2005towards,dave2003compiler,leroy2009formally,leroy2006formal,leroy2009formal,leroy2012compcert,chlipala2010verified,berghofer2004extracting}.
+This has been a popular area, which is primarily focused on more mainstream
+languages and compilers (such as C and Java).
 
-Discuss:
-
-\begin{itemize}
-  \item Proof carrying code
-  \item Proof assistants
-  \item Verified languages and compilers
-  \item Information flow languages
-\end{itemize}
+Another related avenue of research has been the work on proof carrying code,
+which involves a compiler producing a proof that the program satisfies some
+property along with the compiled program, allowing a smaller trusted computing
+base for security sensitive computing
+scenarios~\cite{necula2002proof,necula1998design}.  Our goal was to make a step
+towards producing a verifying compiler for a language with information flow
+types like Jif or FlowCaml, which use a type system very similar to the one
+presented in this paper for ensuring noninterference of
+programs~\cite{InfoFlowML,myers1999jflow}.
 
 \section{Future Work}
 \label{sec:future}
 
-Talk about stuff we still have to do for this to be a complete project.  Talk
-about expected problems and required techniques.  Talk about what we could do
-once this project is completed and we could use it for other projects.
+\todo{Talk about stuff we still have to do for this to be a complete project.
+Talk about expected problems and required techniques.  Talk about what we could
+do once this project is completed and we could use it for other projects.}
 
 \section{Conclusion}
 \label{sec:conclusion}
 
-Summarize again what we covered, where we ended up, and where we'd like to go
-next.
+\todo{Summarize again what we covered, where we ended up, and where we'd like to
+go next.}
 
 \section*{Acknowledgements}
 
