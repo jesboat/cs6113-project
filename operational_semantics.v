@@ -224,10 +224,16 @@ Reserved Notation " t '==>' t' " (at level 40).
 Inductive step : expression -> expression -> Prop :=
 | Beta_Reduction_R : forall t f x e v,
                        (Application (Fix t f x e) v) ==> (beta_reduction x v (beta_reduction f (Fix t f x e) e))
-| If1_R : forall t e1 e2,
-           (If1 (Integer t 1) e1 e2) ==> e1
-| Ifelse_R : forall t v e1 e2,
-               (not (v = (Integer t 1))) -> 
+| If1_R_H : forall e1 e2,
+           (If1 (Integer (Int_t High_Label) 1) e1 e2) ==> e1
+| If1_R_L : forall e1 e2,
+           (If1 (Integer (Int_t Low_Label) 1) e1 e2) ==> e1
+
+| Ifelse_R_H : forall v e1 e2,
+               (not (v = (Integer (Int_t High_Label) 1))) -> 
+               (If1 v e1 e2) ==> e2
+| Ifelse_R_L : forall v e1 e2,
+               (not (v = (Integer (Int_t Low_Label) 1))) -> 
                (If1 v e1 e2) ==> e2
 | Let_R : forall x v e,
             (Let_Bind x v e) ==> (beta_reduction x v e)
@@ -250,6 +256,25 @@ Inductive step : expression -> expression -> Prop :=
 Definition stepmany := refl_step_closure step.
 Notation " t '==>*' t' ":= (stepmany t t') (at level 40).
 
+Lemma step_implies_stepmany : forall t t', t ==> t' -> t ==>* t'.
+  Proof.
+    intros.
+    assert (t ==>* t) by apply rsc_refl.
+    apply (rsc_step step t t'); try assumption; try apply rsc_refl.
+  Qed.
+  
+Lemma stepmany_refl : forall t, t ==>* t.
+  Proof. intros; apply rsc_refl. Qed.
+
+
+(*  Lemma step_many_and_difference_implies_step : 
+    forall t t', (not (t = t')) -> t ==>* t' -> exists mid, t ==>* mid -> mid ==> t'.
+    Proof.
+      intros. exists t. intros. induction H0. contradict H; reflexivity. 
+*)
+      
+    
+    
 Lemma leftbranch_beta_comm : forall var bound expr, 
          left_branch (beta_reduction var bound expr) = beta_reduction var (left_branch_val bound) (left_branch expr)
 with leftbranch_beta_comm_val : forall var bound val,
@@ -279,7 +304,6 @@ Lemma left_branch_idem : forall e, (left_branch (left_branch e)) = (left_branch 
   Case "values". clear left_branch_val_idem.
   induction v; simpl; try (rewrite left_branch_idem); auto.  
 Qed.
-
   
 Lemma lemma_2_l:  forall e e1, e ==> e1 -> (left_branch e) ==>* (left_branch e1).
 Proof.
@@ -296,9 +320,30 @@ Proof.
     SCase "Beta_Reduction_R".
       rewrite leftbranch_beta_comm.
       rewrite leftbranch_beta_comm. simpl. 
+      pose proof (Beta_Reduction_R t f0 x (left_branch e) (left_branch_val a)) as BR. 
+      apply step_implies_stepmany in BR. apply BR.
     SCase "Lift_App_R".
       simpl.
-      rewrite left_branch_val_idem. 
+      rewrite left_branch_val_idem.  apply stepmany_refl.
+  Case "Let_Bind".
+    intros e1 Hreduces. 
+    inversion Hreduces; subst.
+    SCase "let". 
+     pose proof (Let_R nm (left_branch_val vl) (left_branch e)) as LR.
+     apply step_implies_stepmany in LR. rewrite leftbranch_beta_comm. assumption.
+  Case "If1".
+    intros e1 Hreduces.  inversion Hreduces; subst.
+    SCase "0". simpl. pose proof (If1_R_H (left_branch e1) (left_branch b2)) as IfR.
+     apply step_implies_stepmany in IfR. assumption.
+               simpl. pose proof (If1_R_L (left_branch e1) (left_branch b2)) as IfR.
+     apply step_implies_stepmany in IfR. assumption.
+    SCase "nonzero". SSCase "high". simpl. pose proof (Ifelse_R_H (left_branch_val t) (left_branch b1) (left_branch e1)) as IfR.
+    induction t; try auto; try (simpl; discriminate). 
+     SSSCase "identifier". simpl in *. assert (Identifier t v <> Integer (Int_t High_Label) 1) by discriminate. apply IfR in H. apply step_implies_stepmany in H. assumption.
+     SSSCase "integer". admit.
+     SSSCase "fix". simpl in *. assert (Identifier t v <> Integer (Int_t High_Label) 1) by discriminate. apply IfR in H. apply step_implies_stepmany in H. assumption.
+    
+
 
   (app (pair thing1 thing2) arg)  ==>  (pair (thing1 arg) (thing2 arg))
      v                                   v
