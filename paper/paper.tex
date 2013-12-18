@@ -34,6 +34,76 @@ any interesting similarities or differences between us and Pottier and Simonet.
 
 \section{Type System}
 
+\langName has a very simple type system, including only integers and lambda
+abstractions, which include fixpoints by default, along with appropriate
+security labels for both.  In \langName, security labels specify confidentiality
+policies, specifying what other data the labelled data can affect.\footnote{It is
+not difficult to imagine how to extend our system to include integrity labels.
+However, for the sake of simplicity, we decided to concern ourselves with only
+confidentiality at first}  Data can only be affected by items at the same label
+or lower (so high data can not affect low labelled data).
+
+The language's type system includes subtyping, which allows data that have a
+lower label to flow into higher labelled data.  The rules for subtyping are
+given in Figure~\ref{fig:subtype_rules}.  Rule \textsc{S-Int} states that
+integers are subtypes of integers with equivalent or higher labels in the label
+lattice.  Similarly, rule \textsc{S-Abs} gives the standard subtyping
+relationship for functions along with the same label relation.
+
+\begin{figure}
+  \begin{mathpar}
+    \infer[S-Int]
+    {
+    l \leq l'
+    }
+    {
+    \textsf{int}^l \leq \textsf{int}^{l'}
+    }
+
+    \infer[S-Abs]
+    {
+    t_{in}' \leq t_{in} \\
+    t_{out} \leq t_{out}' \\
+    l \leq l'
+    }
+    {
+    (t_{in} \to t_{out})^l \leq (t_{in}' \to t_{out}')^{l'}
+    }
+  \end{mathpar}
+  \caption{Rules for subtyping in \langName.}
+  \label{fig:subtype_rules}
+\end{figure}
+
+For the sake of being able to discuss how strong labels are, we follow the
+example of Simonet and Pottier~\cite{InfoFlowML} and define a ``guards''
+relation between labels and types, denoted $l \guards t$, which states that the
+label $l$ is at least as restrictive as the label on the type $t$.  In other
+words, this requires that the type has at least $l$ for it's security label.
+The two rules regarding this relationships for both types in our language are
+given in Figure~\ref{fig:guard_rules}.
+
+\begin{figure}
+  \begin{mathpar}
+    \infer[G-Int]
+    {
+    l \leq l'
+    }
+    {
+    l \guards \textsf{int}^{l'}
+    }
+
+    \infer[G-Int]
+    {
+    l \leq l'
+    }
+    {
+    l \guards (* \to *)^{l'}
+    }
+  \end{mathpar}
+  \caption{Rules for labels guarding types in \langName.}
+  \label{fig:guard_rules}
+\end{figure}
+
 \begin{figure}
   \begin{mathpar}
     \infer[V-Int]
@@ -130,22 +200,6 @@ any interesting similarities or differences between us and Pottier and Simonet.
   \end{mathpar}
   \caption{Typing judgements for expressions in \langName.}
   \label{fig:expr_types}
-\end{figure}
-
-\begin{figure}
-  \begin{mathpar}
-    TODO
-  \end{mathpar}
-  \caption{Rules for subtyping in \langName.}
-  \label{fig:guard_rules}
-\end{figure}
-
-\begin{figure}
-  \begin{mathpar}
-    TODO
-  \end{mathpar}
-  \caption{Rules for labels guarding types in \langName.}
-  \label{fig:guard_rules}
 \end{figure}
 
 The type system for our simple language is given in Figure~\ref{fig:value_types}.
