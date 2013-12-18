@@ -27,7 +27,12 @@
 
 \abstract
 
-Abstract goes here, summarize what this paper covers and what we ended up with.
+In this paper we discuss our experience trying to mechanize a proof of
+noninterference for a simple language with security labels on the types.
+Although we did not complete the full proof because we ran out of time, we were
+able to find small inaccuracies and subtleties in the proofs from the paper we
+based our proof on.  We discuss what would be involved in completing the proof
+and how this relates to other work.
 
 \section{Introduction}
 
@@ -37,23 +42,60 @@ interesting problem that needs tackling.
 
 \section{\langName}
 
-\begin{figure}
+Our toy language for proving noninterference, \langName, is a simplified version
+of \origLang from Simonet and Pottier's paper~\cite{InfoFlowML}.  Since we had a
+limited amount of time to work on this project, we limited ourselves to a subset
+of the language that drops the following features:
+
+\begin{itemize}
+  \item References and associated memory operations.
+  \item Paired values.
+  \item Exceptions.
+  \item Sequencing operations.
+\end{itemize}
+
+While the language becomes much much less interesting for actual programming, we
+feel that these features do not fundamentally change the problem of proving
+noninterference.  In order to mechanize a proof of noninterference for a
+language closer to \origLang, it would require simply adding mechanized proofs
+for the additional cases where appropriate.
+
+\textbf{TODO: Talk about what the bracketed expressions and values are.}
+
+Furthermore, primarily due to a matter of taste, we decided to replace the
+\textsf{case} construct from \origLang for an \textsf{if} construct, which
+evaluates the first expression if the test evaluates to 1 and evaluates to the
+second expression otherwise.
+
+Through these changes, our language has the syntax shown in
+Figure~\ref{fig:syntax}.  As shown, final states, answers, in the language are
+now simple values because there are no exceptions.
+
+\begin{figure}[h!]
   \begin{align}
-    v & ::= x \: | \: k \: | \: \textsf{fix} f . \lambda x . e \tag{values} \\
-    a & ::= v \tag{answers} \\
-    e & ::= a \: | \: v v \: | \: \textsf{if } v \: e_1 \: e_2 \: | \: \textsf{let
-    } x := v \textsf{ in } e \tag{expressions} \\
+    v & ::= x \: | \: k \: | \: \textsf{fix} f . \lambda x . e \tag{values} \: |
+    \: <v | v> \\
+    a & ::= v \tag{answers} \: | \: <a | a> \\
+    e & ::= a \: | \: v v \: | \: \textsf{if } v \: e \: e \: | \: \textsf{let
+    } x := v \textsf{ in } e \tag{expressions} \: | \: <e | e> \\
   \end{align}
   \caption{Syntax of \langName}
   \label{fig:syntax}
 \end{figure}
 
+In the following two subsections, we introduce the operational semantics and
+type system for the language.
+
 \subsection{Operational Semantics}
 
-Outline the operational semantics of the baby language we developed.  Outline
-any interesting similarities or differences between us and Pottier and Simonet.
+\langName has an operational semantics that should be familiar to the reader who
+has seen a single step semantics for a basic lambda calculus.  The interesting
+additions are the same as those in \origLang, where there are additional rules
+for handling the bracketed values.
 
-\begin{figure}
+\textbf{TODO: Talk about what the rules do at a high level.}
+
+\begin{figure}[h!]
   Basic reductions
   \begin{align}
     (\textsf{fix} f . \lambda x . e) v
@@ -295,6 +337,9 @@ Figure~\ref{fig:expr_types} includes typing judgements for expressions.
   \label{fig:expr_types}
 \end{figure}
 
+\textbf{TODO: Talk more about the rules and what they're doing.  Specifically,
+discuss what the heck H and pc are doing.}
+
 \section{Proof of Noninterference}
 
 Before discussing the task of mechanizing a noninterference proof for \langName,
@@ -304,6 +349,9 @@ semantics and type system, and finish with a proof of noninterference for the
 language.  Since \langName is a stripped down version of \origLang, the proofs
 will look like a simplified version of the proofs found in Pottier and Simonet's
 paper~\cite{InfoFlowML}.
+
+\textbf{TODO: Add in text between lemmas and theorems discussing what each one
+is at a high level.}
 
 \begin{lemma}[Soundness]
   \label{lem:soundness}
@@ -357,7 +405,7 @@ paper~\cite{InfoFlowML}.
   answer $a$ such that $e \to^* a$.
 \end{lemma}
 \begin{proof}
-  TODO
+  \textbf{TODO}
 \end{proof}
 
 \begin{lemma}
@@ -478,7 +526,7 @@ paper~\cite{InfoFlowML}.
   }{e}{\textsf{int}^l}$ and $e \to^* v$ then $\lift{v}_1 = \lift{v}_2$.
 \end{lemma}
 \begin{proof}
-  TODO
+  \textbf{TODO}
 \end{proof}
 
 \begin{thm}[Noninterference]
@@ -488,7 +536,7 @@ paper~\cite{InfoFlowML}.
   \Leftarrow v_i] \to^* v_i'$ hold, then $v_1' = v_2'$.
 \end{thm}
 \begin{proof}
-  TODO
+  \textbf{TODO}
 \end{proof}
 
 \section{Mechanizing Proofs}
