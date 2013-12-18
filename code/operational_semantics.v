@@ -84,29 +84,29 @@ Fixpoint get_type (val : value) : type :=
     | Value_Evaluation_Pair t l r => t
   end.
 
-Function beta_reduction_values (var : variable_name) (bind : value) (val : value): value :=
+Function subst_values (var : variable_name) (bind : value) (val : value): value :=
   match val with
     | Identifier _ nm => if (names_equal nm var) then bind else val
     | Fix t f a b => if (names_equal f var) then val else 
                        if (names_equal a var) then val else
-                         Fix t f a (beta_reduction var bind b)
-    | Value_Evaluation_Pair t v1 v2 => Value_Evaluation_Pair t (beta_reduction_values var bind v1)
-                                                             (beta_reduction_values var bind v2)
+                         Fix t f a (subst var bind b)
+    | Value_Evaluation_Pair t v1 v2 => Value_Evaluation_Pair t (subst_values var bind v1)
+                                                             (subst_values var bind v2)
     | _ => val
   end
 
-with beta_reduction (var : variable_name) (bind : value) (expr : expression) : expression := 
-  let beta_reduction_values := (fun val => beta_reduction_values var bind val) in 
-  let beta_reduction := (fun val => beta_reduction var bind val) in 
+with subst (var : variable_name) (bind : value) (expr : expression) : expression := 
+  let subst_values := (fun val => subst_values var bind val) in 
+  let subst := (fun val => subst var bind val) in 
   match expr with
-    | Value v => Value (beta_reduction_values v)
-    | Application f a => Application (beta_reduction_values f) (beta_reduction_values a)
+    | Value v => Value (subst_values v)
+    | Application f a => Application (subst_values f) (subst_values a)
     | Let_Bind name val expr => 
-      let new_val := (beta_reduction_values val) in
-      let new_expr := if (names_equal name var) then expr else (beta_reduction expr) in
+      let new_val := (subst_values val) in
+      let new_expr := if (names_equal name var) then expr else (subst expr) in
       Let_Bind name new_val new_expr
-    | If1 t th el => If1 (beta_reduction_values t) (beta_reduction th) (beta_reduction el)
-    | Expression_Evaluation_Pair l r => Expression_Evaluation_Pair (beta_reduction l) (beta_reduction r)
+    | If1 t th el => If1 (subst_values t) (subst th) (subst el)
+    | Expression_Evaluation_Pair l r => Expression_Evaluation_Pair (subst l) (subst r)
   end.
 
 (* big-step semantics of the language *)
@@ -131,15 +131,15 @@ Fixpoint reduction_rules (expr : expression) (recursion_bound : nat) (step_bound
                                    (Application r (right_branch_val a))) in
                 reduction_rules new_expr recursion_bound sb
               | Fix type fname argname fexpr => 
-                let bind_fun_expr := (beta_reduction 
-                                         argname a (beta_reduction fname f fexpr)) in 
+                let bind_fun_expr := (subst 
+                                         argname a (subst fname f fexpr)) in 
                 (match recursion_bound with 
                    | 0 => None (* failed, bottom-out *)
                    | S n => reduction_rules bind_fun_expr n sb
                  end)
               | _ => None
             end)
-         | Let_Bind lname lvalue lexpr => reduction_rules (beta_reduction lname lvalue lexpr) recursion_bound sb
+         | Let_Bind lname lvalue lexpr => reduction_rules (subst lname lvalue lexpr) recursion_bound sb
          | If1 test thendo elsedo => 
            (match test with
               | Integer t val => if beq_nat val 1 then reduction_rules thendo recursion_bound sb 
@@ -222,8 +222,8 @@ Fixpoint reduction_rules_env (env : environment) (expr : expression) (recursion_
 Reserved Notation " t '==>' t' " (at level 40).
 
 Inductive step : expression -> expression -> Prop :=
-| Beta_Reduction_R : forall t f x e v,
-                       (Application (Fix t f x e) v) ==> (beta_reduction x v (beta_reduction f (Fix t f x e) e))
+| Subst_R : forall t f x e v,
+                       (Application (Fix t f x e) v) ==> (subst x v (subst f (Fix t f x e) e))
 | If1_R : forall t e1 e2,
            (If1 (Integer t 1) e1 e2) ==> e1
 | Ifelse_R : forall v e1 e2,
@@ -231,7 +231,7 @@ Inductive step : expression -> expression -> Prop :=
                  (forall a b c, v <> Value_Evaluation_Pair a b c) ->
                  (If1 v e1 e2) ==> e2
 | Let_R : forall x v e,
-            (Let_Bind x v e) ==> (beta_reduction x v e)
+            (Let_Bind x v e) ==> (subst x v e)
 | Lift_App_R : forall t v1 v2 v,
                  (Application (Value_Evaluation_Pair t v1 v2) v)
                    ==> 
@@ -273,10 +273,10 @@ Lemma stepmany_refl : forall t, t ==>* t.
     
     
 Lemma leftbranch_beta_comm : forall var bound expr, 
-         left_branch (beta_reduction var bound expr) = beta_reduction var (left_branch_val bound) (left_branch expr)
+         left_branch (subst var bound expr) = subst var (left_branch_val bound) (left_branch expr)
 with leftbranch_beta_comm_val : forall var bound val,
-         left_branch_val (beta_reduction_values var bound val) = 
-         beta_reduction_values var (left_branch_val bound) (left_branch_val val).
+         left_branch_val (subst_values var bound val) = 
+         subst_values var (left_branch_val bound) (left_branch_val val).
 Proof.
   Case "expr". clear leftbranch_beta_comm.
   intros.
@@ -338,10 +338,10 @@ Proof.
   Case "Application".
     intros e1 Hreduces.    
     inversion Hreduces; subst.
-    SCase "Beta_Reduction_R".
+    SCase "Subst_R".
       rewrite leftbranch_beta_comm.
       rewrite leftbranch_beta_comm. simpl. 
-      pose proof (Beta_Reduction_R t f0 x (left_branch e) (left_branch_val a)) as BR. 
+      pose proof (Subst_R t f0 x (left_branch e) (left_branch_val a)) as BR. 
       apply step_implies_stepmany in BR. apply BR.
     SCase "Lift_App_R".
       simpl.
