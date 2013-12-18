@@ -229,12 +229,10 @@ Inductive step : expression -> expression -> Prop :=
 | If1_R_L : forall e1 e2,
            (If1 (Integer (Int_t Low_Label) 1) e1 e2) ==> e1
 
-| Ifelse_R_H : forall v e1 e2,
-               (not (v = (Integer (Int_t High_Label) 1))) -> 
-               (If1 v e1 e2) ==> e2
-| Ifelse_R_L : forall v e1 e2,
-               (not (v = (Integer (Int_t Low_Label) 1))) -> 
-               (If1 v e1 e2) ==> e2
+| Ifelse_R : forall v e1 e2,
+                 (forall t, v <> (Integer t 1)) ->
+                 (forall a b c, v <> Value_Evaluation_Pair a b c) ->
+                 (If1 v e1 e2) ==> e2
 | Let_R : forall x v e,
             (Let_Bind x v e) ==> (beta_reduction x v e)
 | Lift_App_R : forall t v1 v2 v,
@@ -312,6 +310,23 @@ Lemma left_branch_still_unequal: forall t v, t <> v ->
   Proof. 
      Case "proving assertion". intros. induction t; try (simpl; assumption). pose proof (H0 t v0 v1 e) as hwrong. contradict hwrong; reflexivity.  pose proof (H1 t1 t2 t3) as hwrong. contradict hwrong; reflexivity.  Qed.
 
+Lemma left_branch_still_not_integer: forall t typ i, t <> (Integer typ i) -> 
+                                                     (forall a b c, t <> (Value_Evaluation_Pair a b c)) -> 
+                                                     left_branch_val t <>  (Integer typ i).
+Proof.
+  intros.
+  destruct t; simpl; intros; congruence.
+Qed.
+
+Lemma left_branch_still_not_pair: forall t a b c,
+                                    (forall a0 b0 c0, t <> Value_Evaluation_Pair a0 b0 c0)
+-> left_branch_val t <> (Value_Evaluation_Pair a b c).
+Proof.
+  intros.
+  destruct t; simpl; intros; congruence.
+Qed.
+   
+
 Lemma lemma_2_l:  forall e e1, e ==> e1 -> (left_branch e) ==>* (left_branch e1).
 Proof.
   intros e. functional induction (left_branch e).
@@ -344,16 +359,13 @@ Proof.
      apply step_implies_stepmany in IfR. assumption.
                simpl. pose proof (If1_R_L (left_branch e1) (left_branch b2)) as IfR.
      apply step_implies_stepmany in IfR. assumption.
-    SCase "nonzero". SSCase "high". simpl. pose proof (Ifelse_R_H (left_branch_val t) (left_branch b1) (left_branch e1)) as IfR.
-    induction t; try auto; try (simpl; discriminate). 
-     SSSCase "identifier". simpl in *. assert (Identifier t v <> Integer (Int_t High_Label) 1) by discriminate; apply IfR in H; apply step_implies_stepmany in H; assumption.
-     SSSCase "integer". admit.
-     SSSCase "fix". simpl in *; assert (Fix t v v0 (left_branch e) <> Integer (Int_t High_Label) 1) by discriminate; apply IfR in H; apply step_implies_stepmany in H; assumption.
-     SSSCase "evaluation pair". admit.
-    SCase "nonzero". SSCase "low". simpl. pose proof (Ifelse_R_L (left_branch_val t) (left_branch b1) (left_branch e1)) as IfR. induction t. simpl in *.  assert (Identifier t v <> Integer (Int_t Low_Label) 1) by discriminate. apply IfR in H. apply step_implies_stepmany in H. assumption.
-    simpl in *.  admit.  simpl in *. assert (Fix t v v0 (left_branch e) <> Integer (Int_t Low_Label) 1) by discriminate. apply IfR in H. apply step_implies_stepmany in H. assumption.
-     (*value evaluation pair *) admit.
-
-    simpl. rewrite left_branch_idem. rewrite left_branch_idem. apply stepmany_refl.
-    Qed.
- 
+    SCase "nonzero".
+    simpl.
+    pose proof (Ifelse_R (left_branch_val t) (left_branch b1) (left_branch e1)) as IfR.
+    apply step_implies_stepmany.
+    apply IfR. 
+    intros. pose proof (H3 t0) as newH3. apply (left_branch_still_not_integer t t0 1) in newH3. assumption.
+    assumption. 
+    intros. apply left_branch_still_not_pair. assumption.
+    SCase "lift".
+    simpl. rewrite left_branch_idem. rewrite left_branch_idem. constructor. Qed.
