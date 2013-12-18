@@ -1,4 +1,13 @@
 \documentclass[a4paper,twocolumn]{article}
+\usepackage{mathpartir}
+\usepackage{amssymb}
+\usepackage{float}
+\floatstyle{boxed}
+\restylefloat{figure}
+
+\newcommand{\langName}[0]{TinyML\textsuperscript{2}}
+\newcommand{\typeRule}[3]
+{#1 \textsf{ } \vdash \textsf{ } #2 \textsf{ } \colon \textsf{ } #3}
 
 \title{Towards a Mechanized Proof of Noninterference}
 \author{Tom Magrino \and Matthew Milano}
@@ -7,6 +16,8 @@
 \maketitle
 
 \abstract
+
+Citing something for now to make an error message go away~\cite{Pierce:SF}.
 Abstract goes here, summarize what this paper covers and what we ended up with.
 
 \section{Introduction}
@@ -22,8 +33,40 @@ any interesting similarities or differences between us and Pottier and Simonet.
 
 \section{Type System}
 
-Outline the type system of the language and again compare/contrast with
-Pottier and Simonet.
+\begin{figure}
+  \begin{mathpar}
+    \infer*[left=V-Int]
+    { }
+    {\typeRule{\Gamma}{k}{\textsf{int}^{*}}}
+
+    \infer*[left=V-Var]
+    {\Gamma(x) = t}
+    {\typeRule{\Gamma}{x}{t}}
+
+    \infer*[left=V-Abs]
+    {\typeRule{pc, \Gamma[x \mapsto t'][f \mapsto (t \to t')^l]}{e}{t}}
+    {\typeRule{\Gamma}{\textsf{fix} f . \lambda x . e}{(t \to t')^l}}
+
+    \infer*[left=V-Bracket]
+    {
+    \typeRule{\Gamma}{v_1}{t} \\
+    \typeRule{\Gamma}{v_2}{t} \\
+    l \in H \\
+    l \lhd t
+    }
+    {\typeRule{\Gamma}{<v_1 | v_2>}{t}}
+
+    \infer*[left=V-Sub]
+    {
+    \typeRule{\Gamma}{v}{t'} \\
+    t' \leq t
+    }
+    {\typeRule{\Gamma}{v}{t}}
+  \end{mathpar}
+  \caption{Typing judgements for values in \langName.}
+\end{figure}
+
+The type system for our simple language is given in Figure~\ref{fig:type_rules}.
 
 \section{Proofs}
 
@@ -53,10 +96,10 @@ next.
 
 \section*{Acknowledgements}
 
-Acknowledge people who really helped.  Primary name that comes to mind is that
-nice Jon fellow we spent many hours on the phone getting advice from.
+We would like to thank Jon Sailor from Facebook for helping us over the phone
+work through some of the more difficult problems we ran into using Coq.
 
 \bibliographystyle{abbrv}
-\bibliography{paper.bib}
+\bibliography{paper}
 
 \end{document}
