@@ -1,5 +1,6 @@
 \documentclass[a4paper]{article}
 \usepackage{mathpartir}
+\usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{amsthm}
 %\usepackage{float}
@@ -15,6 +16,8 @@
 \theoremstyle{plain}
 \newtheorem{thm}{Theorem}
 \newtheorem{lemma}{Lemma}
+\theoremstyle{definition}
+\newtheorem*{case}{Case}
 
 \title{Towards a Mechanized Proof of Noninterference}
 \author{Tom Magrino \and Matthew Milano}
@@ -36,6 +39,14 @@ interesting problem that needs tackling.
 
 Outline the operational semantics of the baby language we developed.  Outline
 any interesting similarities or differences between us and Pottier and Simonet.
+
+\begin{figure}
+  \begin{align}
+    foobar \tag{WAT}
+  \end{align}
+  \caption{Operational semantics for \langName.}
+  \label{fig:operational_semantics}
+\end{figure}
 
 \section{Type System}
 
@@ -119,7 +130,7 @@ Figure~\ref{fig:expr_types} includes typing judgements for expressions.
     {\typeRule{\Gamma}{k}{\textsf{int}^{*}}}
 
     \infer[V-Var]
-    {\Gamma(x) = t}
+    {t \in \Gamma(x)}
     {\typeRule{\Gamma}{x}{t}}
 
     \infer[V-Abs]
@@ -216,14 +227,16 @@ Before discussing the task of mechanizing a noninterference theorem for
 \langName, it is useful to first view what the natural language proof would
 look like first.  We first start by proving some supporting lemmas and finish
 with a proof of noninterference for the language.  Since \langName is a stripped
-down version of \origLang, the proof will look like a simplified version of the
-proof found in Pottier and Simonet's paper~\cite{InfoFlowML}.
-
-234101415
+down version of \origLang, the proofs will look like a simplified version of the
+proofs found in Pottier and Simonet's paper~\cite{InfoFlowML}.
 
 \begin{lemma}[Soundness]
   \label{lem:soundness}
-  Let $i \in \{1, 2\}$. If $e \to e'$, then $\lift{e}_i \to \lift{e'}_i$.
+  Let $i \in \{1, 2\}$. If $e \to e'$, then $\lift{e}_i \to^*
+  \lift{e'}_i$.\footnote{Notice that this is not the same statement as the
+  Soundness lemma in Simonet and Pottier's paper~\cite{InfoFlowML}, which does
+  not give a variable number of steps for the conclusion.  We will discuss this
+  change in Section~\ref{sec:mechanizing}.}
 \end{lemma}
 \begin{proof}
   TODO
@@ -245,6 +258,55 @@ proof found in Pottier and Simonet's paper~\cite{InfoFlowML}.
   TODO
 \end{proof}
 
+\begin{lemma}
+  \label{lem:guard_subtype}
+  If $l' \leq l$ and $l \guards t$ and $t \leq t'$, then $l' \guards t'$.
+\end{lemma}
+\begin{proof}
+  $l \guards t$ is equivalent to $l \leq level(t)$ where $level$ is a function
+  that takes a type and returns the label on that type.  It's simple to see that
+  $level$ is covariant in its argument.  The result follows.
+\end{proof}
+
+\begin{lemma}[Weakening]
+  \label{lem:weakening}
+  $pc' \leq pc$ and $\typeRule{pc, \Gamma}{e}{t}$ imply $\typeRule{pc',
+  \Gamma}{e}{t}$.
+\end{lemma}
+\begin{proof}
+  By induction on the derivation of $\typeRule{pc, \Gamma}{e}{t}$.  By the
+  monotonicity of $\sqcup$, rule \textsc{V-Sub}, Lemma~\ref{lem:guard_subtype},
+  and the inductive hypothesis, it can be checked that the premise remains valid
+  when $pc$ is lowered.
+\end{proof}
+
+\begin{lemma}[Projection]
+  \label{lem:projection}
+  Let $i \in \{1, 2\}$.  If $\typeRule{\Gamma}{v}{t}$ then
+  $\typeRule{\Gamma}{\lift{v}_i}{t}$.  If $\typeRule{pc, \Gamma}{e}{t}$ then
+  $\typeRule{pc, \Gamma}{\lift{e}_i}{t}$.
+\end{lemma}
+\begin{proof}
+  By induction on the derivation for $v$ and $e$.  The only interesting case is
+  that of \textsc{E-Bracket}, since other cases end up either being trivial or
+  using the inductive hypothesis for a case of \textsc{E-Bracket}.  The
+  expression is $<e_1 | e_2>$.  Since $pc \sqcup pc' \leq pc$, by
+  Lemma~\ref{lem:weakening} and the inductive hypothesis, we can prove the
+  typing judgements for both branches.
+\end{proof}
+
+\begin{lemma}[Guard]
+  \label{lem:guard}
+  If $\typeRule{\Gamma}{< v_1 | v_2 >}{t}$ then there exists $pc' \in H$ s.t.
+  $pc' \guards t$.
+\end{lemma}
+\begin{proof}
+  Through Lemma~\ref{lem:guard_subtype}, we can see that we can always construct
+  a typing derivation that does not end with \textsc{V-Sub}.  As a result, the
+  derivation can always end with \textsc{V-Bracket}, which has the premises $pc'
+  \in H$ and $pc' \guards t$.
+\end{proof}
+
 \begin{lemma}[Substitution]
   \label{lem:stuck_bracket}
   Assume $\typeRule{ }{v}{s}$.  Then, $\typeRule{\Gamma[x \mapsto s]}{v'}{t}$
@@ -253,7 +315,59 @@ proof found in Pottier and Simonet's paper~\cite{InfoFlowML}.
   v]}{t}$.
 \end{lemma}
 \begin{proof}
-  TODO
+  We can prove both statements by induction on the typing derivation for $v'$
+  and $e$.  In this proof, we focus only on a subset of the cases.
+
+  \begin{case}[\textsc{V-Int}]
+    This is trivial, since $x$ does not get substituted in $v'$ and so the
+    statement becomes a tautology.
+  \end{case}
+
+  \begin{case}[\textsc{V-Var}]
+    If $v'$ is $x$, then we are in the case where $s \in t$.  Thus, we can
+    conclude that given $\typeRule{ }{v}{s}$, $\typeRule{\Gamma[x \mapsto
+    s]}{v'}{t}$ by \textsc{V-Var}.  Since $v'[x \Leftarrow v] = v$, we can
+    conclude $\typeRule{\Gamma}{v'[x \Leftarrow v]}{t}$.
+
+    Otherwise, we are in the case where $v'$ is some variable $y \neq x$.
+    Then, given that $v'[x \Leftarrow v] = v' = y$ and since $\Gamma(y) =
+    \Gamma[x \mapsto s]$, we can see that $\typeRule{\Gamma[x \mapsto
+    s]}{v'}{t}$ implies that $\typeRule{\Gamma}{v'[x \Leftarrow v]}{t}$.
+  \end{case}
+
+  \begin{case}[\textsc{V-Abs}]
+    The premise in this case becomes $\typeRule{pc, \Gamma[x \mapsto s][y
+    \mapsto t'][f \mapsto (t' \to t'')^l]}{e'}{t''}$.
+
+    Let us assume that $x$, $f$, and $y$ are distinct, since otherwise this
+    would reduce to a similar situation to that of \textsc{V-Var} when the
+    variable substitution leaves $v'$ unchanged, which is trivial.  Since they
+    are distinct, $\Gamma[x \mapsto s][y \mapsto t'][f \mapsto (t' \to t'')^l]$
+    is equivalent to $\Gamma[y \mapsto t'][f \mapsto (t' \to t'')^l][x \mapsto
+    s]$ and so we can apply the inductive hypothesis and \textsc{V-Abs} to show
+    $\typeRule{\Gamma}{v'[x \Leftarrow v]}{t}$.
+  \end{case}
+
+  \begin{case}[\textsc{V-Bracket}]
+    In this case the premises are of the form $\typeRule{\Gamma[x \mapsto
+    s]}{v'_i}{t}$.  By Lemma~\ref{lem:projection}, we know that
+    $\typeRule{\Gamma}{v}{s}$ implies $\typeRule{\Gamma}{\lift{v}_i}{s}$.  By
+    the inductive hypothesis, we can then say that $\typeRule{\Gamma}{v'_i[x
+    \Leftarrow v]}{t}$ holds.  Thus, we can apply \textsc{V-Bracket} to obtain
+    $\typeRule{\Gamma}{<v'_1[x \Leftarrow v] | v'_2[x \Leftarrow v]>}{t}$,
+    proving the statement.
+  \end{case}
+
+  \begin{case}[\textsc{V-Sub}, \textsc{E-Value}, \textsc{E-App}, \textsc{E-If},
+    \textsc{E-Let}, \textsc{E-Sub}]
+    Applying the inductive hypothesis on the premises and applying the
+    associated rule proves these cases.
+  \end{case}
+
+  \begin{case}[\textsc{E-Bracket}]
+    This case is similar to the case of \textsc{V-Bracket}.
+    Lemma~\ref{lem:guard} allows us to apply \textsc{E-Bracket} where necessary.
+  \end{case}
 \end{proof}
 
 \begin{lemma}
@@ -276,6 +390,7 @@ proof found in Pottier and Simonet's paper~\cite{InfoFlowML}.
 \end{proof}
 
 \section{Mechanizing Proofs}
+\label{sec:mechanizing}
 
 Talk about what did/should have been mechanized.  Talk about troubles and/or
 interesting bits here.  Might point out here that we're fairly certain that we
@@ -298,8 +413,8 @@ next.
 
 \section*{Acknowledgements}
 
-We would like to thank Jon Sailor from Facebook for helping us over the phone
-work through some of the more difficult problems we ran into using Coq.
+We would like to thank Jon Sailor for chatting with us on the phone to help work
+through some of the more difficult problems we ran into using Coq.
 
 \bibliographystyle{abbrv}
 \bibliography{paper}
