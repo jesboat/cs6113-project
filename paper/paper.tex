@@ -222,15 +222,28 @@ Section~\ref{sec:proof}.
 
 \langName has a very simple type system, including only integers and lambda
 abstractions, which include fixpoints by default, along with appropriate
-security labels for both.  In \langName, security labels specify confidentiality
-policies, specifying what other data the labelled data can affect.\footnote{It is
-not difficult to imagine how to extend our system to include integrity labels.
-However, for the sake of simplicity, we decided to concern ourselves with only
-confidentiality at first}  Data can only be affected by items at the same label
-or lower (so high data can not affect low labelled data).
+security labels for both, as shown in Figure~\ref{fig:types}.  In \langName,
+security labels specify confidentiality policies, specifying what other data the
+labelled data can affect.\footnote{It is not difficult to imagine how to extend
+our system to include integrity labels.  However, for the sake of simplicity, we
+decided to concern ourselves with only confidentiality at first}  Data can only
+be affected by items at the same label or lower (so high data can not affect low
+labelled data).
 
-\textbf{TODO: Give definition of types in the language and discuss stuff that
-was dropped from \origLang}
+\begin{figure}[h!]
+  \begin{align*}
+    t ::= int^l \: | \: (t -> t)^l
+  \end{align*}
+  \caption{Types for \langName}
+  \label{fig:types}
+\end{figure}
+
+A reader familiar with the type system for \origLang will notice that our type
+system does not include types above the arrow in the function type, for giving
+security bounds on side effects of the function, and the type does not include
+effect labels for exceptions.  These are dropped as a result of the
+simplifications we made in defining \langName, since there are no side effects
+or exceptions in the language.
 
 The language's type system includes subtyping, which allows data that have a
 lower label to flow into higher labelled data.  We use the notatoin $x \leq y$
