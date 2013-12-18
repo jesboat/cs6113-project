@@ -1,4 +1,4 @@
-\documentclass[a4paper]{article}
+\documentclass[a4paper,twocolumn]{article}
 \usepackage{mathpartir}
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -142,7 +142,7 @@ additions are the same as those in \origLang, where there are additional rules
 for handling the bracketed values.  The reduction rules for the semantics are
 given in Figure~\ref{fig:operational_semantics}.
 
-\begin{figure}[h!]
+\begin{figure*}[t]
   Basic reductions
   \begin{align}
     (\textsf{fix} f . \lambda x . e) v
@@ -209,7 +209,7 @@ given in Figure~\ref{fig:operational_semantics}.
   \end{align}
   \caption{Operational semantics for \langName.}
   \label{fig:operational_semantics}
-\end{figure}
+\end{figure*}
 
 At a high level, these bracketed expressions are evaluated by evaluating one of
 the branches, as shown in rules \ref{eq:bracket-left} and
