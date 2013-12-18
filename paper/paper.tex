@@ -41,8 +41,59 @@ Outline the operational semantics of the baby language we developed.  Outline
 any interesting similarities or differences between us and Pottier and Simonet.
 
 \begin{figure}
+  Basic reductions
   \begin{align}
-    foobar \tag{WAT}
+    (\textsf{fix} f . \lambda x . e) v
+    \textsf{ } \to \textsf{ } &
+    e[x \Leftarrow v][f \Leftarrow \textsf{fix} f . \lambda x . e]
+    \tag{$\beta$}
+    \label{eq:beta}
+    \\
+    \textsf{if } 1 \textsf{ } e_1 \textsf { } e_2
+    \textsf{ } \to \textsf{ } &
+    e_1
+    \tag{if-true}
+    \label{eq:if-true}
+    \\
+    \textsf{if } (k \neq 1) \textsf { } e_1 \textsf { } e_2
+    \textsf{ } \to \textsf{ } &
+    e_2
+    \tag{if-false}
+    \label{eq:if-false}
+    \\
+    \textsf{let }  x := v \textsf{ in } e
+    \textsf{ } \to \textsf{ } &
+    e[x \Leftarrow v]
+    \tag{let}
+    \label{eq:let}
+  \end{align}
+
+  Lifting
+  \begin{align}
+    < v_1 | v_2 > v
+    \textsf{ } \to \textsf{ } &
+    < v_1 \lift{v}_1 | v_2 \lift{v}_2 >
+    \tag{lift-app}
+    \label{eq:lift-app}
+    \\
+    \textsf{if } < v_1 | v_2 > \textsf{ } e_1 \textsf{ } e_2
+    \textsf{ } \to \textsf{ } &
+    < \textsf{if } v_1 \textsf{ } \lift{e_1}_1 \textsf{ } \lift{e_2}_1 |
+    \textsf{ if } v_2 \textsf{ } \lift{e_1}_2 \textsf{ } \lift{e_2}_2 >
+    \tag{lift-if}
+    \label{eq:lift-if}
+    \\
+    &
+    \infer*
+    {
+    e_1 \to e_1' \\
+    e_2 \to e_2'
+    }
+    {
+    <e_1 | e_2> \textsf{ } \to \textsf{ } <e_1' | e_2'>
+    }
+    \tag{bracket}
+    \label{eq:bracket}
   \end{align}
   \caption{Operational semantics for \langName.}
   \label{fig:operational_semantics}
