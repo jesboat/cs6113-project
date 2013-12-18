@@ -1,13 +1,14 @@
-\documentclass[a4paper,twocolumn]{article}
+\documentclass[a4paper]{article}
 \usepackage{mathpartir}
 \usepackage{amssymb}
-\usepackage{float}
-\floatstyle{boxed}
-\restylefloat{figure}
+%\usepackage{float}
+%\floatstyle{boxed}
+%\restylefloat{figure}
 
 \newcommand{\langName}[0]{TinyML\textsuperscript{2}}
 \newcommand{\typeRule}[3]
 {#1 \textsf{ } \vdash \textsf{ } #2 \textsf{ } \colon \textsf{ } #3}
+\newcommand{\guards}[0]{\lhd}
 
 \title{Towards a Mechanized Proof of Noninterference}
 \author{Tom Magrino \and Matthew Milano}
@@ -35,28 +36,28 @@ any interesting similarities or differences between us and Pottier and Simonet.
 
 \begin{figure}
   \begin{mathpar}
-    \infer*[left=V-Int]
+    \infer[V-Int]
     { }
     {\typeRule{\Gamma}{k}{\textsf{int}^{*}}}
 
-    \infer*[left=V-Var]
+    \infer[V-Var]
     {\Gamma(x) = t}
     {\typeRule{\Gamma}{x}{t}}
 
-    \infer*[left=V-Abs]
+    \infer[V-Abs]
     {\typeRule{pc, \Gamma[x \mapsto t'][f \mapsto (t \to t')^l]}{e}{t}}
     {\typeRule{\Gamma}{\textsf{fix} f . \lambda x . e}{(t \to t')^l}}
 
-    \infer*[left=V-Bracket]
+    \infer[V-Bracket]
     {
     \typeRule{\Gamma}{v_1}{t} \\
     \typeRule{\Gamma}{v_2}{t} \\
     l \in H \\
-    l \lhd t
+    l \guards t
     }
     {\typeRule{\Gamma}{<v_1 | v_2>}{t}}
 
-    \infer*[left=V-Sub]
+    \infer[V-Sub]
     {
     \typeRule{\Gamma}{v}{t'} \\
     t' \leq t
@@ -64,9 +65,90 @@ any interesting similarities or differences between us and Pottier and Simonet.
     {\typeRule{\Gamma}{v}{t}}
   \end{mathpar}
   \caption{Typing judgements for values in \langName.}
+  \label{fig:value_types}
 \end{figure}
 
-The type system for our simple language is given in Figure~\ref{fig:type_rules}.
+\begin{figure}
+  \begin{mathpar}
+    \infer[E-Value]
+    {
+    \typeRule{\Gamma}{v}{t}
+    }
+    {
+    \typeRule{*, \Gamma}{v}{t}
+    }
+
+    \infer[E-App]
+    {
+    \typeRule{\Gamma}{v_1}{(t' \to t)^l} \\
+    \typeRule{\Gamma}{v_2}{t'} \\
+    l \guards t
+    }
+    {
+    \typeRule{pc, \Gamma}{v_1 v_2}{t}
+    }
+
+    \infer[E-If]
+    {
+    \typeRule{pc, \Gamma}{e_{test}}{\textsf{int}^l} \\
+    \typeRule{pc \sqcup l, \Gamma}{e_{true}}{t} \\
+    \typeRule{pc \sqcup l, \Gamma}{e_{false}}{t} \\
+    l \guards t
+    }
+    {
+    \typeRule{pc, \Gamma}{\textsf{if } e_{test} \textsf{ } e_{true} \textsf{ } e_{false}}{t}
+    }
+
+    \infer[E-Let]
+    {
+    \typeRule{\Gamma}{v}{s} \\
+    \typeRule{pc, \Gamma[x \mapsto s]}{e}{t} \\
+    }
+    {
+    \typeRule{pc, \Gamma}{\textsf{let } x := s \textsf{ in } e}{t}
+    }
+
+    \infer[E-Sub]
+    {
+    \typeRule{pc, \Gamma}{e}{t'} \\
+    t' \leq t
+    }
+    {
+    \typeRule{pc, \Gamma}{e}{t}
+    }
+
+    \infer[E-Bracket]
+    {
+    \typeRule{pc \sqcup pc', \Gamma}{e_1}{t} \\
+    \typeRule{pc \sqcup pc', \Gamma}{e_2}{t} \\
+    pc' \in H \\
+    pc' \guards t
+    }
+    {
+    \typeRule{pc, \Gamma}{<e_1 | e_2>}{t}
+    }
+  \end{mathpar}
+  \caption{Typing judgements for expressions in \langName.}
+  \label{fig:expr_types}
+\end{figure}
+
+\begin{figure}
+  \begin{mathpar}
+    TODO
+  \end{mathpar}
+  \caption{Rules for subtyping in \langName.}
+  \label{fig:guard_rules}
+\end{figure}
+
+\begin{figure}
+  \begin{mathpar}
+    TODO
+  \end{mathpar}
+  \caption{Rules for labels guarding types in \langName.}
+  \label{fig:guard_rules}
+\end{figure}
+
+The type system for our simple language is given in Figure~\ref{fig:value_types}.
 
 \section{Proofs}
 
