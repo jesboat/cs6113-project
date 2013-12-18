@@ -676,7 +676,30 @@ reduced form is also well typed, with the same type.
   \{1, 2\}$.  Then $\typeRule{pc}{e'}{t}$.
 \end{lemma}
 \begin{proof}
-  \todo{}
+  By induction on the derivation of $e \to e'$.
+  \begin{case}[$\beta$]
+    \todo{}
+  \end{case}
+
+  \begin{case}[if]
+    \todo{}
+  \end{case}
+
+  \begin{case}[let]
+    \todo{}
+  \end{case}
+
+  \begin{case}[lift-app]
+    \todo{}
+  \end{case}
+
+  \begin{case}[lift-if]
+    \todo{}
+  \end{case}
+
+  \begin{case}[bracket]
+    \todo{}
+  \end{case}
 \end{proof}
 
 Finally, we prove one final lemma and the noninterference theorem.  The lemma
@@ -698,11 +721,11 @@ projections (so the value in either run of the program) are equivalent.
   which is the same under either projection.
 \end{proof}
 
-Finally, the noninteference theorem shows that if we have an expression that is
-typed with a low label, then replacing any bracketed value in the expression
-with either projection will result in the same value for the overall expression.
-In other words, if we vary any high security item in a low security expression,
-the value must not be affected.
+The noninteference theorem shows that if we have an expression that is typed
+with a low label, then replacing any bracketed value in the expression with
+either projection will result in the same value for the overall expression.  In
+other words, if we vary any high security item in a low security expression, the
+value must not be affected.
 
 \begin{thm}[Noninterference]
   Choose $l, h \in \mathcal{L}$ such that $h \not\leq l$.  Let $h \guards t$.
@@ -787,8 +810,18 @@ do once this project is completed and we could use it for other projects.}
 \section{Conclusion}
 \label{sec:conclusion}
 
-\todo{Summarize again what we covered, where we ended up, and where we'd like to
-go next.}
+In this paper, we present a simple information flow typed language \langName,
+prove noninterference for the language, and discuss our experiences beginning to
+mechanize this proof in coq.  Although we did not complete our proof, we were
+able to catch inaccuracies and subtleties that the proof we based our approach
+on did not handle or explicitly cover.  This is the first step towards a
+verified compiler for a language with information flow types such as Jif or
+FlowCaml, which allows for a more trustworthy compiler and language definition,
+by allowing users to verify the proofs in a proof assistant like Coq.  As far as
+we know, a verified proof of noninterference for such a language has not been
+implemented, let alone a verified compiler.  We are confident that, given more
+time and a large amount of work, such a verified compiler could be realized for
+a mature information flow language.
 
 \section*{Acknowledgements}
 
