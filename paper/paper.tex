@@ -28,19 +28,58 @@
 \abstract
 
 In this paper we discuss our experience trying to mechanize a proof of
-noninterference for a simple language with security labels on the types.
-Although we did not complete the full proof because we ran out of time, we were
-able to find small inaccuracies and subtleties in the proofs from the paper we
-based our proof on.  We discuss what would be involved in completing the proof
-and how this relates to other work.
+noninterference for a simple language with security labels, \langName.  Although
+we did not complete the full noninterference proof because we ran out of time,
+we were able to find small inaccuracies and subtleties in the proofs from the
+paper we based our proof on.  We discuss what would be involved in completing
+the proof and how this relates to other work.
 
 \section{Introduction}
 
-Introduce idea and outline what it will require us to do.  Explain where we're
-starting from (Pottier and Simonet) at a high level.  Justify why this is an
-interesting problem that needs tackling.
+Verified systems have been growing in popularity recently with the rise of proof
+assistants like Coq and NuPRL~\cite{coqart,nuprl}.  These systems allow a
+programmer to write programs and have proofs, which are checked and compiled by
+the system, which can assert various properties about the programs.  As we will
+discuss in Section~\ref{sec:related}, these systems have been used to formalize,
+prove correct, and implement systems that have verified properties.  This allows
+for programmers to be more confident in their languages and programs, ensuring
+that the properties they want are actually properties of their work.
+
+Interestingly, as far as we know there has not been work to formalize and verify
+a language, like Jif~\cite{myers1999jflow} or FlowCaml~\cite{simonet2003flow},
+that has a type system for enforcing information flow security policies.  For
+languages like these and other systems related to security, it is desirable for
+the program to be accompanied with a proof of the security properties it
+enforces.  Our goal is to make progress towards verifying the correctness of a
+compiler for a language with information flow types that programmers will want
+to use.
+
+A verified compiler for a language like Jif would require a proof of
+noninterference, which asserts that any program in the language will never
+produce different outputs for low security items if only the high security input
+values are varied.  Thus, in this paper we discuss our experience working
+towards proving this theorem for a simple information flow type system as a
+first step towards creating a verified information flow compiler.
+
+Our language, \langName,  and proof are a simplified version of what is
+presented in Simonet and Pottier's work on information flow for an ML-like
+language, \origLang~\cite{InfoFlowML}.  This proof proceeds by designing a
+language that includes values which represent two different alternatives,
+representing the different values of high security items in two different
+executions of the program.  The proof then becomes a matter of proving that if
+the program is typed with a low security label, this does not produce a value
+that could be different between two different executions of the program.
+
+In this paper we will present our simplified language, \langName,
+along with the semantics and type system (Section~\ref{sec:lang}).  We will then
+present a natural language, human readable, proof of noninterference for the
+language and discuss our experiences with mechanizing this proof in the Coq
+proof assistant (Sections~\ref{sec:proof} and \ref{sec:mechanizing}).  Finally,
+we will discuss related work, next steps, and conclude
+(Sections~\ref{sec:related}, \ref{sec:future}, and \ref{sec:conclusion}).
 
 \section{\langName}
+\label{sec:lang}
 
 Our toy language for proving noninterference, \langName, is a simplified version
 of \origLang from Simonet and Pottier's paper~\cite{InfoFlowML}.  Since we had a
@@ -341,6 +380,7 @@ Figure~\ref{fig:expr_types} includes typing judgements for expressions.
 discuss what the heck H and pc are doing.}
 
 \section{Proof of Noninterference}
+\label{sec:proof}
 
 Before discussing the task of mechanizing a noninterference proof for \langName,
 it is useful to first view what the natural language proof would look like
@@ -547,16 +587,19 @@ interesting bits here.  Might point out here that we're fairly certain that we
 found an inaccuracy in the original paper.
 
 \section{Related Work}
+\label{sec:related}
 
 Discuss various references related to our project.
 
 \section{Future Work}
+\label{sec:future}
 
 Talk about stuff we still have to do for this to be a complete project.  Talk
 about expected problems and required techniques.  Talk about what we could do
 once this project is completed and we could use it for other projects.
 
 \section{Conclusion}
+\label{sec:conclusion}
 
 Summarize again what we covered, where we ended up, and where we'd like to go
 next.
