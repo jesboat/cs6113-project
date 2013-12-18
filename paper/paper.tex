@@ -521,7 +521,7 @@ the bracketed expression in \langName.
 
   As a result, we know that $e$ reduces to an answer, because otherwise it would
   be stuck and this would mean that one of the projections is also stuck by
-  Lemma~\ref{lem:bracket_stuck}, a contradicton.  Thus, we know that if both
+  Lemma~\ref{lem:stuck_bracket}, a contradicton.  Thus, we know that if both
   projections step to an answer, so must the original expression.
 \end{proof}
 
@@ -589,7 +589,7 @@ branches.
 Here we prove a standard substitution lemma for the type system.
 
 \begin{lemma}[Substitution]
-  \label{lem:stuck_bracket}
+  \label{lem:substitution}
   Assume $\typeRule{ }{v}{s}$.  Then, $\typeRule{\Gamma[x \mapsto s]}{v'}{t}$
   implies $\typeRule{\Gamma}{v'[x \Leftarrow v]}{t}$.  Also $\typeRule{pc,
   \Gamma[x \mapsto s]}{e}{t}$ implies $\typeRule{pc, \Gamma}{e[x \Leftarrow
@@ -750,7 +750,7 @@ Specifically, it is entirely possible that a step in the operational semantics
 does not translate to a step in the operational semantics under either
 projection, as in the case of the \ref{eq:lift-app} rule, where $\lift{e}_i$ and
 $\lift{e'}_i$ are identical.  Luckily, we are fairly confident, given that we
-were still able to prove Lemma~\ref{lem:bracket_stuck} despite this change, that
+were still able to prove Lemma~\ref{lem:stuck_bracket} despite this change, that
 this is not a critical error in the original paper.
 
 \todo{More.}
