@@ -35,7 +35,20 @@ Introduce idea and outline what it will require us to do.  Explain where we're
 starting from (Pottier and Simonet) at a high level.  Justify why this is an
 interesting problem that needs tackling.
 
-\section{Operational Semantics}
+\section{\langName}
+
+\begin{figure}
+  \begin{align}
+    v & ::= x \: | \: k \: | \: \textsf{fix} f . \lambda x . e \tag{values} \\
+    a & ::= v \tag{answers} \\
+    e & ::= a \: | \: v v \: | \: \textsf{if } v \: e_1 \: e_2 \: | \: \textsf{let
+    } x := v \textsf{ in } e \tag{expressions} \\
+  \end{align}
+  \caption{Syntax of \langName}
+  \label{fig:syntax}
+\end{figure}
+
+\subsection{Operational Semantics}
 
 Outline the operational semantics of the baby language we developed.  Outline
 any interesting similarities or differences between us and Pottier and Simonet.
@@ -44,25 +57,25 @@ any interesting similarities or differences between us and Pottier and Simonet.
   Basic reductions
   \begin{align}
     (\textsf{fix} f . \lambda x . e) v
-    \textsf{ } \to \textsf{ } &
+    \: \to \: &
     e[x \Leftarrow v][f \Leftarrow \textsf{fix} f . \lambda x . e]
     \tag{$\beta$}
     \label{eq:beta}
     \\
-    \textsf{if } 1 \textsf{ } e_1 \textsf { } e_2
-    \textsf{ } \to \textsf{ } &
+    \textsf{if } 1 \: e_1 \textsf { } e_2
+    \: \to \: &
     e_1
     \tag{if-true}
     \label{eq:if-true}
     \\
     \textsf{if } (k \neq 1) \textsf { } e_1 \textsf { } e_2
-    \textsf{ } \to \textsf{ } &
+    \: \to \: &
     e_2
     \tag{if-false}
     \label{eq:if-false}
     \\
     \textsf{let }  x := v \textsf{ in } e
-    \textsf{ } \to \textsf{ } &
+    \: \to \: &
     e[x \Leftarrow v]
     \tag{let}
     \label{eq:let}
@@ -71,15 +84,15 @@ any interesting similarities or differences between us and Pottier and Simonet.
   Lifting
   \begin{align}
     < v_1 | v_2 > v
-    \textsf{ } \to \textsf{ } &
+    \: \to \: &
     < v_1 \lift{v}_1 | v_2 \lift{v}_2 >
     \tag{lift-app}
     \label{eq:lift-app}
     \\
-    \textsf{if } < v_1 | v_2 > \textsf{ } e_1 \textsf{ } e_2
-    \textsf{ } \to \textsf{ } &
-    < \textsf{if } v_1 \textsf{ } \lift{e_1}_1 \textsf{ } \lift{e_2}_1 |
-    \textsf{ if } v_2 \textsf{ } \lift{e_1}_2 \textsf{ } \lift{e_2}_2 >
+    \textsf{if } < v_1 | v_2 > \: e_1 \: e_2
+    \: \to \: &
+    < \textsf{if } v_1 \: \lift{e_1}_1 \: \lift{e_2}_1 \: |
+    \textsf{ if } v_2 \: \lift{e_1}_2 \: \lift{e_2}_2 >
     \tag{lift-if}
     \label{eq:lift-if}
     \\
@@ -89,7 +102,7 @@ any interesting similarities or differences between us and Pottier and Simonet.
     e_1 \to e_1' \\
     }
     {
-    <e_1 | e_2> \textsf{ } \to \textsf{ } <e_1' | e_2>
+    <e_1 | e_2> \: \to \: <e_1' | e_2>
     }
     \tag{bracket-left}
     \label{eq:bracket-left}
@@ -100,7 +113,7 @@ any interesting similarities or differences between us and Pottier and Simonet.
     e_2 \to e_2' \\
     }
     {
-    <e_1 | e_2> \textsf{ } \to \textsf{ } <e_1 | e_2'>
+    <e_1 | e_2> \: \to \: <e_1 | e_2'>
     }
     \tag{bracket-right}
     \label{eq:bracket-right}
@@ -109,7 +122,7 @@ any interesting similarities or differences between us and Pottier and Simonet.
   \label{fig:operational_semantics}
 \end{figure}
 
-\section{Type System}
+\subsection{Type System}
 
 \langName has a very simple type system, including only integers and lambda
 abstractions, which include fixpoints by default, along with appropriate
@@ -246,7 +259,7 @@ Figure~\ref{fig:expr_types} includes typing judgements for expressions.
     l \guards t
     }
     {
-    \typeRule{pc, \Gamma}{\textsf{if } e_{test} \textsf{ } e_{true} \textsf{ } e_{false}}{t}
+    \typeRule{pc, \Gamma}{\textsf{if } e_{test} \: e_{true} \: e_{false}}{t}
     }
 
     \infer[E-Let]
@@ -282,14 +295,15 @@ Figure~\ref{fig:expr_types} includes typing judgements for expressions.
   \label{fig:expr_types}
 \end{figure}
 
-\section{Proofs}
+\section{Proof of Noninterference}
 
-Before discussing the task of mechanizing a noninterference theorem for
-\langName, it is useful to first view what the natural language proof would
-look like first.  We first start by proving some supporting lemmas and finish
-with a proof of noninterference for the language.  Since \langName is a stripped
-down version of \origLang, the proofs will look like a simplified version of the
-proofs found in Pottier and Simonet's paper~\cite{InfoFlowML}.
+Before discussing the task of mechanizing a noninterference proof for \langName,
+it is useful to first view what the natural language proof would look like
+first.  We first start by proving some supporting lemmas about the language's
+semantics and type system, and finish with a proof of noninterference for the
+language.  Since \langName is a stripped down version of \origLang, the proofs
+will look like a simplified version of the proofs found in Pottier and Simonet's
+paper~\cite{InfoFlowML}.
 
 \begin{lemma}[Soundness]
   \label{lem:soundness}
@@ -322,7 +336,7 @@ proofs found in Pottier and Simonet's paper~\cite{InfoFlowML}.
     $\lift{v_1}_i$ can not be a fixpoint function, and so it is stuck.
   \end{case}
 
-  \begin{case}[$e = \textsf{ if } v \textsf{ } e_1 \textsf{ } e_2$ or $e =
+  \begin{case}[$e = \textsf{ if } v \: e_1 \: e_2$ or $e =
     \textsf{ let } x := v \textsf{ in } e$]
     These are similar to the previous case.  The value $v$ can not be an integer
     and so the lifted version of $v$ can not be an integer, meaning the lifted
@@ -331,16 +345,16 @@ proofs found in Pottier and Simonet's paper~\cite{InfoFlowML}.
 
   \begin{case}[$e = < e_1 | e_2 >$]
     Since $e$ is stuck, then by \ref{eq:bracket-left} and \ref{eq:bracket-right}
-    we know that both $e_1$ and $e_2$ must be stuck.  Since $e$ is not a final
-    value, we know either $e_1$ or $e_2$ must not be a final value and, as a
+    we know that both $e_1$ and $e_2$ must be stuck.  Since $e$ is not an
+    answer, we know either $e_1$ or $e_2$ must not be an answer and, as a
     result, stuck.
   \end{case}
 \end{proof}
 
 \begin{lemma}[Completeness]
   \label{lem:completeness}
-  Assume $\lift{e}_i \to^* a_i$ for all $i \in \{1, 2\}$.  Then, there exists a
-  final value $a$ such that $e \to^* a$.
+  Assume $\lift{e}_i \to^* a_i$ for all $i \in \{1, 2\}$.  Then, there exists an
+  answer $a$ such that $e \to^* a$.
 \end{lemma}
 \begin{proof}
   TODO
