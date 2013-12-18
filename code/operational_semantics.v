@@ -224,11 +224,8 @@ Reserved Notation " t '==>' t' " (at level 40).
 Inductive step : expression -> expression -> Prop :=
 | Beta_Reduction_R : forall t f x e v,
                        (Application (Fix t f x e) v) ==> (beta_reduction x v (beta_reduction f (Fix t f x e) e))
-| If1_R_H : forall e1 e2,
-           (If1 (Integer (Int_t High_Label) 1) e1 e2) ==> e1
-| If1_R_L : forall e1 e2,
-           (If1 (Integer (Int_t Low_Label) 1) e1 e2) ==> e1
-
+| If1_R : forall t e1 e2,
+           (If1 (Integer t 1) e1 e2) ==> e1
 | Ifelse_R : forall v e1 e2,
                  (forall t, v <> (Integer t 1)) ->
                  (forall a b c, v <> Value_Evaluation_Pair a b c) ->
@@ -245,10 +242,12 @@ Inductive step : expression -> expression -> Prop :=
                     (Expression_Evaluation_Pair 
                        (If1 vl (left_branch e1) (left_branch e2))
                        (If1 vr (right_branch e1) (right_branch e2)))
-| Bracket_R : forall e1 e2 e1' e2',
+| Bracket_left_R : forall e1 e2 e1',
                 e1 ==> e1' -> 
-                e2 ==> e2' ->
-                Expression_Evaluation_Pair e1 e2 ==> Expression_Evaluation_Pair e1' e2'
+                Expression_Evaluation_Pair e1 e2 ==> Expression_Evaluation_Pair e1' e2
+| Bracket_right_R : forall e1 e2 e2',
+                e2 ==> e2' -> 
+                Expression_Evaluation_Pair e1 e2 ==> Expression_Evaluation_Pair e1 e2'
   where " t '==>' t' " := (step t t').
 
 Definition stepmany := refl_step_closure step.
@@ -308,7 +307,7 @@ Lemma left_branch_still_unequal: forall t v, t <> v ->
                          (forall a b c, t <> (Value_Evaluation_Pair a b c)) -> 
                          left_branch_val t <> v.
   Proof. 
-     Case "proving assertion". intros. induction t; try (simpl; assumption). pose proof (H0 t v0 v1 e) as hwrong. contradict hwrong; reflexivity.  pose proof (H1 t1 t2 t3) as hwrong. contradict hwrong; reflexivity.  Qed.
+     Case "proving assertion". intros. induction t; try (simpl; assumption). pose proof (H0 t v0 v1 e) as hwrong. contradict hwrong; reflexivity. pose proof (H1 t1 t2 t3) as hwrong. contradict hwrong; reflexivity.  Qed.
 
 Lemma left_branch_still_not_integer: forall t typ i, t <> (Integer typ i) -> 
                                                      (forall a b c, t <> (Value_Evaluation_Pair a b c)) -> 
@@ -331,9 +330,9 @@ Lemma lemma_2_l:  forall e e1, e ==> e1 -> (left_branch e) ==>* (left_branch e1)
 Proof.
   intros e. functional induction (left_branch e).
   Case "Expression_Evaluation_Pair".
-    intros e1 Hreduces.
-    inversion Hreduces; subst.
-    simpl. auto. 
+    intros e1 Hreduces. inversion Hreduces; subst.
+    SCase "left stepped". simpl. apply IHe0. assumption.
+    SCase "right stepped". simpl. apply stepmany_refl.
   Case "Value".
     intros e1 Hreduces. inversion Hreduces.
   Case "Application".
@@ -355,9 +354,7 @@ Proof.
      apply step_implies_stepmany in LR. rewrite leftbranch_beta_comm. assumption.
   Case "If1".
     intros e1 Hreduces.  inversion Hreduces; subst.
-    SCase "0". simpl. pose proof (If1_R_H (left_branch e1) (left_branch b2)) as IfR.
-     apply step_implies_stepmany in IfR. assumption.
-               simpl. pose proof (If1_R_L (left_branch e1) (left_branch b2)) as IfR.
+    SCase "0". simpl. pose proof (If1_R t0 (left_branch e1) (left_branch b2)) as IfR.
      apply step_implies_stepmany in IfR. assumption.
     SCase "nonzero".
     simpl.
@@ -369,3 +366,134 @@ Proof.
     intros. apply left_branch_still_not_pair. assumption.
     SCase "lift".
     simpl. rewrite left_branch_idem. rewrite left_branch_idem. constructor. Qed.
+
+Definition normal_form {X:Type} (R:relation X) (t:X) : Prop :=
+  ~ exists t', R t t'.
+
+
+Inductive is_value : expression -> Prop :=
+  | is_value_v : forall v, is_value (Value v)
+  | is_value_pair : forall v1 v2, is_value (Expression_Evaluation_Pair (Value v1) (Value v2)).
+
+Definition stuck (t:expression) : Prop :=
+  (normal_form step) t /\ ~ is_value t.
+
+Require Classical.
+
+Lemma stuck_or_not : forall e, stuck e \/ ~ stuck e.
+Proof.
+  intros. apply Classical_Prop.classic. Qed.
+
+Lemma lemma_3_micro : forall e,
+                        (forall a b, e <> Expression_Evaluation_Pair a b) ->
+                        (stuck e) -> (stuck (left_branch e))  \/ (stuck (right_branch e)).
+  Proof.
+    intros e Hnotpair H.
+    intros. destruct e. 
+    Case "value".
+      unfold stuck in H. inversion  H. contradict H1. constructor. 
+    Case "Application".
+      unfold stuck in H. inversion H. unfold normal_form in H0. 
+      destruct v;
+        try solve [ simpl; left; unfold stuck; split;
+                    [ intro contra; solve by inversion 2
+                    | intro contra; solve by inversion ] ];
+            contradict H0; repeat econstructor.
+    Case "Let_Bind". unfold stuck in H. inversion H. unfold normal_form in H0. contradict H0.
+     econstructor. econstructor. 
+    Case "If". unfold stuck in H. inversion H. unfold normal_form in H0. contradict H0. 
+     destruct v;
+        try solve [econstructor; apply Ifelse_R; intros; discriminate].
+      SCase "Integer". compare n 1; intro Hn1; subst.
+        SSCase "true". econstructor. apply If1_R.
+        SSCase "false". econstructor. apply Ifelse_R. intros. congruence. intros; congruence.
+      SCase "Value_Evaluation_Pair". econstructor. apply Lift_Case_R. 
+    Case "Expression_Evaluation_Pair". 
+      specialize (Hnotpair e1 e2). congruence.
+Qed.
+
+
+Lemma lemma_3 : forall e, (stuck e) -> (stuck (left_branch e))  \/ (stuck (right_branch e)).
+Proof.
+  induction e;
+    try solve [ apply lemma_3_micro; try congruence ].
+  Case "E_E_P".
+    intro Hstuck; inversion Hstuck as [Hnormal Hnonvalu].
+Admitted.
+
+(*
+    destruct (stuck_or_not e1); destruct (stuck_or_not e2).
+    SCase "both".
+      simpl.
+      specialize (IHe1 H). specialize (IHe2 H0).
+      inversion IHe1; inversion IHe2; try tauto.
+      assert (forall a b, left_branch e1 <> Expression_Evaluation_Pair a b) as Hwecouldprovethis by admit.
+      destruct (stuck_or_not (left_branch e1)).
+      SSCase "left(e1) stuck". tauto.
+      SSCase "left(e1) not stuck". admit.
+    SCase "e2 is not stuck".
+      unfold stuck in H0.
+      unfold normal_form in Hnormal.
+      contradict Hnormal.
+      eexists.
+      apply Classical_Prop.not_and_or in H0.
+
+      
+      contradict H0. contradict H0.
+
+      inversion H0.
+      unfold normal_form in H1.
+      apply Classical_Prop.NNPP in H1.
+      inversion 
+
+        unfold stuck in H3. 
+apply Classical_Prop.not_and_or in H3.
+inversion H3.
+unfold normal_form in H4.
+apply Classical_Prop.NNPP in H4.
+inversion H4.
+unfold stuck in H.
+contradict H.
+apply Classical_Prop.or_not_and.
+left.
+unfold normal_form. intro blah; contradict blah.
+inversion H5; subst. rewrite <- H6 in *.
+destruct e1; try solve [ simpl in *; congruence ].
+  (* foo *) simpl in *. 
+simpl in H6. inversion H6. subst.
+
+
+
+econstructor. econstructor. 
+
+
+left. 
+
+unfold normal_form. intro blah; contradict blah. 
+
+
+contradict 
+
+     pose proof (lemma_3_micro (left_branch e1)).
+
+      
+
+    unfold stuck
+
+    Case "e1 stuck".
+    unfold normal_form in Hnormal.
+
+
+  apply lemma_3_micro; try congruence.
+  
+
+
+
+
+simpl. unfold stuck in H. inversion H. 
+      unfold normal_form in H0.
+      destruct (stuck_or_not e1).
+      SCase "e1 stuck". apply IHe1 in H2. tauto.
+
+
+*)
