@@ -238,7 +238,7 @@ labelled data).
 
 \begin{figure}[t]
   \begin{align*}
-    t ::= int^l \: | \: (t -> t)^l
+    t ::= int^l \: | \: (t \to t)^l
   \end{align*}
   \caption{Types for \langName}
   \label{fig:types}
@@ -718,7 +718,7 @@ the value must not be affected.
   v]}{\textsf{int}^l}$.  By Lemma~\ref{lem:final_support}, we know that
   $\lift{e[x \Leftarrow v]}_i = e[x \Leftarrow \lift{v}_i]$, which under the
   current assumptions reduces to $v_i$.  By Lemma~\ref{lem:completeness} we know
-  that there is an answer $a$ such that $e[x \Leftarrow v] ->^* a$.  By
+  that there is an answer $a$ such that $e[x \Leftarrow v] \to^* a$.  By
   Lemma~\ref{lem:soundness}, $\lift{a}_i = v_i'$ for all $i$ which means that
   $a$ is a value.  Then, we know by Lemma~\ref{lem:final_support} that $v_1' =
   v_2'$.
