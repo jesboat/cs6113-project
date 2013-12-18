@@ -1,5 +1,6 @@
 \documentclass[a4paper]{article}
 \usepackage{mathpartir}
+\usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{amsthm}
 %\usepackage{float}
@@ -38,6 +39,14 @@ interesting problem that needs tackling.
 
 Outline the operational semantics of the baby language we developed.  Outline
 any interesting similarities or differences between us and Pottier and Simonet.
+
+\begin{figure}
+  \begin{align}
+    foobar \tag{WAT}
+  \end{align}
+  \caption{Operational semantics for \langName.}
+  \label{fig:operational_semantics}
+\end{figure}
 
 \section{Type System}
 
@@ -223,7 +232,11 @@ proofs found in Pottier and Simonet's paper~\cite{InfoFlowML}.
 
 \begin{lemma}[Soundness]
   \label{lem:soundness}
-  Let $i \in \{1, 2\}$. If $e \to e'$, then $\lift{e}_i \to \lift{e'}_i$.
+  Let $i \in \{1, 2\}$. If $e \to e'$, then $\lift{e}_i \to^*
+  \lift{e'}_i$.\footnote{Notice that this is not the same statement as the
+  Soundness lemma in Simonet and Pottier's paper~\cite{InfoFlowML}, which does
+  not give a variable number of steps for the conclusion.  We will discuss this
+  change in Section~\ref{sec:mechanizing}.}
 \end{lemma}
 \begin{proof}
   TODO
@@ -377,6 +390,7 @@ proofs found in Pottier and Simonet's paper~\cite{InfoFlowML}.
 \end{proof}
 
 \section{Mechanizing Proofs}
+\label{sec:mechanizing}
 
 Talk about what did/should have been mechanized.  Talk about troubles and/or
 interesting bits here.  Might point out here that we're fairly certain that we
