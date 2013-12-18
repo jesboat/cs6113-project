@@ -1,14 +1,20 @@
 \documentclass[a4paper]{article}
 \usepackage{mathpartir}
 \usepackage{amssymb}
+\usepackage{amsthm}
 %\usepackage{float}
 %\floatstyle{boxed}
 %\restylefloat{figure}
 
 \newcommand{\langName}[0]{TinyML\textsuperscript{2}}
-\newcommand{\typeRule}[3]
-{#1 \textsf{ } \vdash \textsf{ } #2 \textsf{ } \colon \textsf{ } #3}
+\newcommand{\origLang}[0]{CoreML\textsuperscript{2}}
+\newcommand{\typeRule}[3]{#1 \vdash #2 \colon #3}
 \newcommand{\guards}[0]{\lhd}
+\newcommand{\lift}[1]{\lfloor #1 \rfloor}
+
+\theoremstyle{plain}
+\newtheorem{thm}{Theorem}
+\newtheorem{lemma}{Lemma}
 
 \title{Towards a Mechanized Proof of Noninterference}
 \author{Tom Magrino \and Matthew Milano}
@@ -18,7 +24,6 @@
 
 \abstract
 
-Citing something for now to make an error message go away~\cite{Pierce:SF}.
 Abstract goes here, summarize what this paper covers and what we ended up with.
 
 \section{Introduction}
@@ -50,7 +55,7 @@ integers are subtypes of integers with equivalent or higher labels in the label
 lattice.  Similarly, rule \textsc{S-Abs} gives the standard subtyping
 relationship for functions along with the same label relation.
 
-\begin{figure}
+\begin{figure}[h!]
   \begin{mathpar}
     \infer[S-Int]
     {
@@ -82,7 +87,7 @@ words, this requires that the type has at least $l$ for it's security label.
 The two rules regarding this relationships for both types in our language are
 given in Figure~\ref{fig:guard_rules}.
 
-\begin{figure}
+\begin{figure}[h!]
   \begin{mathpar}
     \infer[G-Int]
     {
@@ -104,7 +109,10 @@ given in Figure~\ref{fig:guard_rules}.
   \label{fig:guard_rules}
 \end{figure}
 
-\begin{figure}
+Figure~\ref{fig:value_types} includes typing judgements for values and
+Figure~\ref{fig:expr_types} includes typing judgements for expressions.
+
+\begin{figure}[h!]
   \begin{mathpar}
     \infer[V-Int]
     { }
@@ -138,7 +146,7 @@ given in Figure~\ref{fig:guard_rules}.
   \label{fig:value_types}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[h!]
   \begin{mathpar}
     \infer[E-Value]
     {
@@ -202,12 +210,70 @@ given in Figure~\ref{fig:guard_rules}.
   \label{fig:expr_types}
 \end{figure}
 
-The type system for our simple language is given in Figure~\ref{fig:value_types}.
-
 \section{Proofs}
 
-I'm imagining this section could outline the human version of the proofs we'd
-need to do a full noninterference proof.
+Before discussing the task of mechanizing a noninterference theorem for
+\langName, it is useful to first view what the natural language proof would
+look like first.  We first start by proving some supporting lemmas and finish
+with a proof of noninterference for the language.  Since \langName is a stripped
+down version of \origLang, the proof will look like a simplified version of the
+proof found in Pottier and Simonet's paper~\cite{InfoFlowML}.
+
+234101415
+
+\begin{lemma}[Soundness]
+  \label{lem:soundness}
+  Let $i \in \{1, 2\}$. If $e \to e'$, then $\lift{e}_i \to \lift{e'}_i$.
+\end{lemma}
+\begin{proof}
+  TODO
+\end{proof}
+
+\begin{lemma}
+  \label{lem:stuck_bracket}
+  If $e$ is stuck, then $\lift{e}_i$is stuck for some $i \in \{1, 2\}$.
+\end{lemma}
+\begin{proof}
+  TODO
+\end{proof}
+
+\begin{lemma}[Completeness]
+  \label{lem:stuck_bracket}
+  If $e$ is stuck, then $\lift{e}_i$is stuck for some $i \in \{1, 2\}$.
+\end{lemma}
+\begin{proof}
+  TODO
+\end{proof}
+
+\begin{lemma}[Substitution]
+  \label{lem:stuck_bracket}
+  Assume $\typeRule{ }{v}{s}$.  Then, $\typeRule{\Gamma[x \mapsto s]}{v'}{t}$
+  implies $\typeRule{\Gamma}{v'[x \Leftarrow v]}{t}$.  Also $\typeRule{pc,
+  \Gamma[x \mapsto s]}{e}{t}$ implies $\typeRule{pc, \Gamma}{e[x \Leftarrow
+  v]}{t}$.
+\end{lemma}
+\begin{proof}
+  TODO
+\end{proof}
+
+\begin{lemma}
+  Let $H$ be an upward-closed subset of the label lattice $\mathcal{L}$.  Let $l
+  \not\in H$.  If, using $H$ for the set of high labels, $\typeRule{
+  }{e}{\textsf{int}^l}$ and $e \to^* v$ then $\lift{v}_1 = \lift{v}_2$.
+\end{lemma}
+\begin{proof}
+  TODO
+\end{proof}
+
+\begin{thm}[Noninterference]
+  Choose $l, h \in \mathcal{L}$ such that $h \not\leq l$.  Let $h \guards t$.
+  Assume $\typeRule{(x \mapsto t)}{e}{\textsf{int}^l}$, where $e$is a \langName
+  expression.  If, for all $i \in \{1, 2\}$, $\typeRule{ }{v_i}{t}$ and $e[x
+  \Leftarrow v_i] \to^* v_i'$ hold, then $v_1' = v_2'$.
+\end{thm}
+\begin{proof}
+  TODO
+\end{proof}
 
 \section{Mechanizing Proofs}
 
