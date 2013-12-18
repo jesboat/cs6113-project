@@ -87,13 +87,23 @@ any interesting similarities or differences between us and Pottier and Simonet.
     \infer*
     {
     e_1 \to e_1' \\
-    e_2 \to e_2'
     }
     {
-    <e_1 | e_2> \textsf{ } \to \textsf{ } <e_1' | e_2'>
+    <e_1 | e_2> \textsf{ } \to \textsf{ } <e_1' | e_2>
     }
-    \tag{bracket}
-    \label{eq:bracket}
+    \tag{bracket-left}
+    \label{eq:bracket-left}
+    \\
+    &
+    \infer*
+    {
+    e_2 \to e_2' \\
+    }
+    {
+    <e_1 | e_2> \textsf{ } \to \textsf{ } <e_1 | e_2'>
+    }
+    \tag{bracket-right}
+    \label{eq:bracket-right}
   \end{align}
   \caption{Operational semantics for \langName.}
   \label{fig:operational_semantics}
@@ -290,7 +300,8 @@ proofs found in Pottier and Simonet's paper~\cite{InfoFlowML}.
   change in Section~\ref{sec:mechanizing}.}
 \end{lemma}
 \begin{proof}
-  TODO
+  This can be seen by examining each of the operational semantics rules in
+  Figure~\ref{fig:operational_semantics}.
 \end{proof}
 
 \begin{lemma}
@@ -298,12 +309,38 @@ proofs found in Pottier and Simonet's paper~\cite{InfoFlowML}.
   If $e$ is stuck, then $\lift{e}_i$is stuck for some $i \in \{1, 2\}$.
 \end{lemma}
 \begin{proof}
-  TODO
+  By induction on the structure of $e$.
+
+  \begin{case}[$e = v$]
+    In this case, $e$ is not stuck.
+  \end{case}
+
+  \begin{case}[$e = v_1 v_2$]
+    If $e$ is stuck and is an application, this means that neither
+    \ref{eq:beta} nor \ref{eq:lift-app} applies.  This means that $v_1$ can
+    neither be a fixpoint function or some bracketed value.  As a result,
+    $\lift{v_1}_i$ can not be a fixpoint function, and so it is stuck.
+  \end{case}
+
+  \begin{case}[$e = \textsf{ if } v \textsf{ } e_1 \textsf{ } e_2$ or $e =
+    \textsf{ let } x := v \textsf{ in } e$]
+    These are similar to the previous case.  The value $v$ can not be an integer
+    and so the lifted version of $v$ can not be an integer, meaning the lifted
+    expression is also stuck.
+  \end{case}
+
+  \begin{case}[$e = < e_1 | e_2 >$]
+    Since $e$ is stuck, then by \ref{eq:bracket-left} and \ref{eq:bracket-right}
+    we know that both $e_1$ and $e_2$ must be stuck.  Since $e$ is not a final
+    value, we know either $e_1$ or $e_2$ must not be a final value and, as a
+    result, stuck.
+  \end{case}
 \end{proof}
 
 \begin{lemma}[Completeness]
-  \label{lem:stuck_bracket}
-  If $e$ is stuck, then $\lift{e}_i$is stuck for some $i \in \{1, 2\}$.
+  \label{lem:completeness}
+  Assume $\lift{e}_i \to^* a_i$ for all $i \in \{1, 2\}$.  Then, there exists a
+  final value $a$ such that $e \to^* a$.
 \end{lemma}
 \begin{proof}
   TODO
