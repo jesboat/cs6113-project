@@ -305,6 +305,13 @@ Lemma left_branch_idem : forall e, (left_branch (left_branch e)) = (left_branch 
   induction v; simpl; try (rewrite left_branch_idem); auto.  
 Qed.
   
+Lemma left_branch_still_unequal: forall t v, t <> v -> 
+                         (forall typ f x e, t <> Fix typ f x e) ->
+                         (forall a b c, t <> (Value_Evaluation_Pair a b c)) -> 
+                         left_branch_val t <> v.
+  Proof. 
+     Case "proving assertion". intros. induction t; try (simpl; assumption). pose proof (H0 t v0 v1 e) as hwrong. contradict hwrong; reflexivity.  pose proof (H1 t1 t2 t3) as hwrong. contradict hwrong; reflexivity.  Qed.
+
 Lemma lemma_2_l:  forall e e1, e ==> e1 -> (left_branch e) ==>* (left_branch e1).
 Proof.
   intros e. functional induction (left_branch e).
@@ -339,49 +346,14 @@ Proof.
      apply step_implies_stepmany in IfR. assumption.
     SCase "nonzero". SSCase "high". simpl. pose proof (Ifelse_R_H (left_branch_val t) (left_branch b1) (left_branch e1)) as IfR.
     induction t; try auto; try (simpl; discriminate). 
-     SSSCase "identifier". simpl in *. assert (Identifier t v <> Integer (Int_t High_Label) 1) by discriminate. apply IfR in H. apply step_implies_stepmany in H. assumption.
+     SSSCase "identifier". simpl in *. assert (Identifier t v <> Integer (Int_t High_Label) 1) by discriminate; apply IfR in H; apply step_implies_stepmany in H; assumption.
      SSSCase "integer". admit.
-     SSSCase "fix". simpl in *. assert (Identifier t v <> Integer (Int_t High_Label) 1) by discriminate. apply IfR in H. apply step_implies_stepmany in H. assumption.
-    
+     SSSCase "fix". simpl in *; assert (Fix t v v0 (left_branch e) <> Integer (Int_t High_Label) 1) by discriminate; apply IfR in H; apply step_implies_stepmany in H; assumption.
+     SSSCase "evaluation pair". admit.
+    SCase "nonzero". SSCase "low". simpl. pose proof (Ifelse_R_L (left_branch_val t) (left_branch b1) (left_branch e1)) as IfR. induction t. simpl in *.  assert (Identifier t v <> Integer (Int_t Low_Label) 1) by discriminate. apply IfR in H. apply step_implies_stepmany in H. assumption.
+    simpl in *.  admit.  simpl in *. assert (Fix t v v0 (left_branch e) <> Integer (Int_t Low_Label) 1) by discriminate. apply IfR in H. apply step_implies_stepmany in H. assumption.
+     (*value evaluation pair *) admit.
 
-
-  (app (pair thing1 thing2) arg)  ==>  (pair (thing1 arg) (thing2 arg))
-     v                                   v
-  (app thing1 arg)  ==>                (thing1 arg)
-
-(pair 
-
-    subst.
-
-simpl.
-auto.
- apply IHe0.
-assumption.
-
-    apply IHe0.
-
-
-  induction e; intros enew Hreduces.
-  Case "value".
-    solve [ inversion Hreduces ].
-  Case "application".
-    inversion Hreduces; subst.
-simpl.
-
-    solve by inversion.
-
-
-  intros e e1 Hreduces.
-  induction e.
-  Case "Value".
-    destruct v; solve by inversion.
-  Case "Application".
-    destruct v; try solve by inversion.
-      SCase "fix".
-      simpl. SearchAbout left_branch. inversion Hreduces. subst.
-      
-
-  induction Hreduces.  
-inversion H. 
-  Case "Beta_Reduction". 
-  (* how do i run it *)
+    simpl. rewrite left_branch_idem. rewrite left_branch_idem. apply stepmany_refl.
+    Qed.
+ 
