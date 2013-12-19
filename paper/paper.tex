@@ -863,14 +863,16 @@ definitions for things that are ``obvious'' in the natural language proofs.
 It's unclear how long the remainder of the proof would take, but we are certain
 that it is just a matter of time and effort.
 
+Once our noninterference proof has been sucessfully mechanized for \langName, we will incrementally enhance the features of \langName, adding in absent constructs such as bind, references, and exceptions.  We will then re-state and re-prove the noninterference result in a language very much like \origLang.
+
 Once a full Coq proof of noninterference exists, a next step would be to
 integrate this proof and all of the related definitions into a verified type
 checking program, which could be integrated into a verified compiler.  We
 already know that a full verified compiler has been done for C, and this gives
 us hope that it would be possible to implement something similar for a language
-like Jif.
+like Jif.  We are aware that any such effort would require many person-years of effort to complete, but we remain convinced that such an effort would be a worthwhile initiative.
 
-With a verified compiler for such a language, it would be possible to implement
+With our verification effort complete, it would be possible to implement
 a compiler that produced proofs of noninterference to be carried around with the
 compiled program.  This would be interesting in distributed settings where we
 would like to ship code around to others to run on their own machines.  There is
@@ -883,14 +885,11 @@ themselves in order to ensure trust requirements are met.
 
 Another use of a verified compiler would be the ability to verify extensions to
 the language.  For example, the Jif and Fabric programming languages are
-actively worked on and has seen multiple extensions over the years.  Although
+actively worked on and have seen multiple extensions over the years.  Although
 it's pretty certain extensions to these languages that are published are
-correct, requiring these extensions to be added to a verified compiler would
+correct, errors to creep into even the most scrutinized of paper results (as we have observed in this project), and so requiring these extensions to come with mechanized proofs of correctness before incorporation into a verified compiler would
 help ensure that the language updates will not invalidate pre-existing security
-properties of the language, because adding the extension would require adding
-code to cover the additional cases in the proofs.
-
-\todo{more.}
+properties of the language.
 
 \section{Conclusion}
 \label{sec:conclusion}
