@@ -244,9 +244,9 @@ labelled data).
 \end{figure}
 
 A reader familiar with the type system for \origLang will notice that our type
-system does not include types above the arrow in the function type, for giving
-security bounds on side effects of the function, and the type does not include
-effect labels for exceptions.  These are dropped as a result of the
+system does not include labels above the arrow in the function type, which would
+normally give security bounds on side effects of the function, nor does it
+include effect labels for exceptions.  These are dropped as a result of the
 simplifications we made in defining \langName, since there are no side effects
 or exceptions in the language.
 
