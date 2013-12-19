@@ -44,13 +44,13 @@ Verified systems have been growing in popularity recently with the rise of proof
 assistants like Coq and NuPRL~\cite{coqart,nuprl}.  
 These systems allow programmers to construct proofs of properties of their programs which are checked and compiled by the system.  As we will
 discuss in Section~\ref{sec:related}, these \emph{Proof Assistants} have been used to formalize,
-prove correct, and implement systems with verified properties.  This increases Programmers' confidence in their languages and programs; to prove correctness of a function is a much stronger guarantee than simply testing functionality (or asserting correctness in the absence of tests).
+prove correct, and implement systems with verified properties.  This increases programmers' confidence in their languages and programs; to prove correctness of a function is a much stronger guarantee than simply testing functionality (or asserting correctness in the absence of tests).
 
 The last decade has also seen a surge of research in languages which enforce information flow security, such as Jif~\cite{myers1999jflow} or FlowCaml~\cite{simonet2003flow}.  These languages provide features which programmers can use to enforce integrity and confidentiality of data as it is used throughout computations.
 
 Given the growing popularity of Proof Assistants information-flow languages, we were surprised to discover 
-that there has not been work done to formalize ad verify a language with a type systems which enforces information flow security policies.
-These languages seem a natural choice for formal verification, as it is desirable for programs written in these languages to be accompanied with a proof of the security properties it enforces.
+that there has not been work done to formalize ad verify a language with a type system which enforces information flow security policies.
+These languages seem a natural choice for formal verification, as it is desirable for programs written in these languages to be accompanied with a proof of the security properties they enforce.
 Our goal is to make progress towards verifying the correctness of a
 compiler for a language with information flow types that programmers will want
 to use.
@@ -59,16 +59,16 @@ The core theorem which distinguishes an information-flow language from a
 ``normal'' programming language is the poof of noninterference, 
 which asserts that across any two runs, every program in the language will never
 produce different outputs for low security items if only the high security input
-values are varied.  It is just this theorem we wish to prove in this paper; we
+values are varied.  It is this theorem we wish to prove in this paper; we
 hope to learn through this effort of the unique challenges associated with
 mechanizing proofs of information-flow languages.
 
-Our language, \langName,  and proof are a simplified version of what is
+Our language and proof, \langName, are a simplified version of what is
 presented in Simonet and Pottier's work on information flow for an ML-like
 language, \origLang~\cite{InfoFlowML}.  The proof proceeds by designing a
 core language, extending it with a term that represents a ``pair'' of 
 values varied across two executions, and introducing these ``pairs'' of 
-different values in context where the value would have a high-security label.
+values in contexts where the value would have a high-security label.
 The proof then becomes a matter of showing that if
 the program is typed with a low security label, it does not terminate
 with a result that is an instance of one of these ``pairs.''
@@ -91,13 +91,14 @@ of the language that drops the following features:
 
 \begin{itemize}
   \item References and associated memory operations.
-  \item Value Tuples.
+  \item Value 2-Tuples.
   \item Exceptions.
   \item Sequencing operations.
 \end{itemize}
 
-While the language becomes much more burdensome for the programmer, we
-feel that these features do not fundamentally change the problem of proving
+While programming in this language becomes much more burdensome, we
+feel that the removal of these features does not fundamentally 
+change the problem of proving
 noninterference.  Mechanizing a proof of noninterference for a
 language closer to \origLang would require simply adding mechanized proofs
 for the additional cases where appropriate.
