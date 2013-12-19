@@ -101,18 +101,18 @@ noninterference.  Mechanizing a proof of noninterference for a
 language closer to \origLang would require simply adding mechanized proofs
 for the additional cases where appropriate.
 
-Furthermore, primarily due to a matter of taste, we decided to replace the
-\textsf{case} construct from \origLang for an \textsf{if} construct, which
+We also decided to replace the
+\textsf{case} construct from \origLang with an \textsf{if} construct, which
 evaluates the first expression if the test evaluates to 1 and evaluates to the
 second expression otherwise.
 
-\langName, like \origLang, includes angle bracketed expressions, which represent
+\langName, like \origLang, includes angle bracketed expressions which represent
 values or expressions which could differ between two runs of the program.  As we
 will see when discussing the type system, this corresponds to values and
 expressions that have high security labels on their types.
 
 Through these changes, our language has the syntax shown in
-Figure~\ref{fig:syntax}.  As shown, final states, answers, in the language are
+Figure~\ref{fig:syntax}.  As shown, final states (answers) in the language are
 now simple values because there are no exceptions.
 
 \begin{figure}[t]
@@ -136,9 +136,8 @@ type system for the language.
 
 \subsection{Operational Semantics}
 
-\langName has an operational semantics that should be familiar to the reader who
-has seen a single step semantics for a basic lambda calculus.  The interesting
-additions are the same as those in \origLang, where there are additional rules
+\langName has an operational semantics reminiscent of single step semantics for a basic lambda calculus.  The interesting
+additions are the same as those in \origLang -- additional rules
 for handling the bracketed values.  The reduction rules for the semantics are
 given in Figure~\ref{fig:operational_semantics}.
 
@@ -287,7 +286,7 @@ For the sake of being able to discuss how strong labels are in relation to a
 type, we follow the example of Simonet and Pottier~\cite{InfoFlowML} and define
 a ``guards'' relation between labels and types, denoted $l \guards t$, which
 states that the label $l$ is at least as restrictive as the label on the type
-$t$.  In other words, this requires that the type has at least $l$ for it's
+$t$.  In other words, this requires that the type has at least $l$ for its
 security label.  The two rules regarding this relationships for both types in
 our language are given in Figure~\ref{fig:guard_rules}.
 
@@ -301,7 +300,7 @@ our language are given in Figure~\ref{fig:guard_rules}.
     l \guards \textsf{int}^{l'}
     }
 
-    \infer[G-Int]
+    \infer[G-Abs]
     {
     l \leq l'
     }
