@@ -360,3 +360,5 @@ Proof.
   (* SCase id is equal to one of the argument names *)
   admit.
   (* SCase id is not captured by arg names *)
+  admit.
+Qed.
