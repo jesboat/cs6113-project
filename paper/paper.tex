@@ -779,58 +779,51 @@ value must not be affected.
 \label{sec:mechanizing}
 
 As mentioned above, we unfortunately were unable to complete our noninterference
-proof in Coq by the time of this report.  Given more time, we are confident that
-this could be completed however.  So far, we have proven the first few lemmas
-described in Section~\ref{sec:proof} and defined relations for the operational
-semantics and type system as presented in Section~\ref{sec:lang}.  This was much
-more difficult than the short natural language proofs would suggest, due to a
-combination of the stricter format required by Coq and the number of items that
-are elided in the proofs because they were considered trivial or obvious.
+proof in Coq by the time of this report.  As of this writing, we have written definitions of a small-step operational semantics, a big-step operational semantics, typing judgments, and typing derivations for \langName.  We have proven a few lemmas from section~\ref{sec:proof} relating to the operations semantics (including soundness), but remain mired in complexity on the remainder of the mechanization effort.  
 
-We found that the process of mechanizing the lemmas that we proved was a useful
-exercise in checking our understanding of our language, statements, and the work
-of Simonet and Pottier which we based our approach off of.  We found ourselves
-often surprised by the number of items that were elided by the proofs in the
-paper.  For example, the proof of Lemma~\ref{lem:soundness} is one line of
-natural languae but turned out to be 40 lines of Coq code, not including all of
-the supporting definitions and rules.
+In the process of mechanizing these lemmas, we empirically observed that the process of translating English into Coq can involve a nearly fifty-fold increase in the size of even the most basic proofs.  While this was partially a natural effect of writing proofs in Coq, we found that much of the complexity stemmed from handling cases elided in the English-Language proofs; and in these cases we found hidden subtleties which appear to have escaped even Simonet and Pottier.
 
 \subsection{Inaccuracies in the Original Proof}
 
-We discovered a few small inaccuracies in \cite{InfoFlowML} by running into
-issues when formalizing the proofs in Coq.  Listed below are the primary
+We discovered a few small inaccuracies in \cite{InfoFlowML} during the 
+process of formalizing our proofs in Coq.  Listed below are the primary
 corrections we were able to make.
+
+While some inaccuracies did invalidate Simonet and Pottier's original
+Lemmas, we universally found that a slightly different formulation was
+provable and remained usable in future proofs.
 
 \begin{description}
   \item[Non-nesting Brackets in Syntax]
     \hspace{0pt}
     
     As seen in Figure~\ref{fig:syntax}, we have a slightly different syntax
-    structure for \langName from \origLang.  Specifically, we constructed
+    structure for \langName ~than was seen in~ \origLang.  Specifically, we constructed
     values, answers, and expressions explicitly to not allow nesting of
-    bracketed values.  This was not how the syntax figures in Simonet and
-    Pottier's paper defined this, and as a result, we had trouble when our
-    proofs depended on this explicit non-nesting property that was mentioned in
-    the prose of their paper.  Realizing that our definitions did not disallow
+    bracketed values.  The syntax defined by Simonet and Pottier did allow
+    for this nesting, and authors dismissed is as a non-sensible
+    construction.  Unfortunately, allowing such syntactic nesting 
+    prevents the completeness Lemma from being proveable.
+    Realizing that our definitions did not disallow
     this by construction after running into issues in the proof, we were able to
-    fix the definition producing what is in Figure~\ref{fig:syntax}.
+    fix the definition, producing what is in Figure~\ref{fig:syntax}.
     
   \item[Correction of the Soundness Lemma]
     \hspace{0pt}
 
-    Proving our own version of Lemma~\ref{lem:soundness} actually turned out to
-    be instructive because it forced us to recognize that the original
-    formulation in Simonet and Pottier's paper on \origLang wasn't exactly
-    correct as stated.  Specifically, it is entirely possible that a step in the
-    operational semantics does not translate to a step in the operational
-    semantics under either projection, as in the case of the \ref{eq:lift-app}
-    rule, where $\lift{e}_i$ and $\lift{e'}_i$ are identical.  Luckily, we are
+    Proving our own version of Lemma~\ref{lem:soundness} was uniquely
+    instructive because it forced us to recognize that the original
+    formulation in Simonet and Pottier's paper on \origLang ~wasn't 
+    correct as stated.  Simonet and Pottier's Lemma asserts that 
+    if $e \rightarrow e'$, then $\lift{e}_i \rightarrow \lift{e'}_i$.
+    This does not hold in the case where $e$ is of the form $<v1 | v2> v$;
+    In this case, the single reduction rule that applies is \ref{eq:lift-app},
+    which does not step $\lift{e}_i \rightarrow \lift{e'}_i$ for any $i$ 
+    (as $\lift{e}_i$ and $\lift{e'}_i$ are identical).  Luckily, we are
     fairly confident, given that we were still able to prove
     Lemma~\ref{lem:stuck_bracket} despite this change, that this is not a
     critical error in the original paper.
 \end{description}
-
-\todo{more?}
 
 \section{Related Work}
 \label{sec:related}
