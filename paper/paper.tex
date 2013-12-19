@@ -121,12 +121,13 @@ now simple values because there are no exceptions.
 \begin{figure}[t]
   \begin{align}
     v & ::= x \: | \: k \: | \: \textsf{fix} f . \lambda x . e \tag*{ } \\
-    v' & ::= v \: | \: <v | v> \tag{values}\\
+    v' & ::= x \: | \: k \: | \: \textsf{fix} f . \lambda x . e' \: | \: <v | v> \tag{values}\\
     a & ::= v \tag*{ } \\
     a' & ::= a \: | \: <a | a> \tag{answers} \\
     e & ::= a \: | \: v v \: | \: \textsf{if } v \: e \: e \: | \: \textsf{let
     } x := v \textsf{ in } e \tag*{ } \\
-    e' & ::= e \: | \: <e | e> \tag{expressions}
+    e' & ::= a' \: | \: v' v' \: | \: \textsf{if } v' \: e' \: e' \: | \:
+    \textsf{let } x := v' \textsf{ in } e' \: | \: <e | e> \tag{expressions}
   \end{align}
   \caption{Syntax of \langName.  The prime variants are the full class of
   expressions, values, and answers.  This construction avoids allowing nested
