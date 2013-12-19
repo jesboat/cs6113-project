@@ -30,7 +30,8 @@
 \abstract
 
 In this paper we discuss our experience trying to mechanize a proof of
-noninterference for a simple language with security labels, \langName, based on Pottier and Sionet's \origLang.  This
+noninterference for a simple language with security labels, \langName, based on
+Pottier and Simonet's \origLang.  This
 marks the first step towards writing a verified compiler for a language with
 information flow types.  Although we did not complete the full noninterference
 proof, we were able to find subtle inaccuracies in the \origLang proofs.  
@@ -794,17 +795,42 @@ paper.  For example, the proof of Lemma~\ref{lem:soundness} is one line of
 natural languae but turned out to be 40 lines of Coq code, not including all of
 the supporting definitions and rules.
 
-Our proof of Lemma~\ref{lem:soundness} actually turned out to be instructive
-because it forced us to recognize that the original formulation in Simonet and
-Pottier's paper on \origLang~\cite{InfoFlowML} wasn't quite correct.
-Specifically, it is entirely possible that a step in the operational semantics
-does not translate to a step in the operational semantics under either
-projection, as in the case of the \ref{eq:lift-app} rule, where $\lift{e}_i$ and
-$\lift{e'}_i$ are identical.  Luckily, we are fairly confident, given that we
-were still able to prove Lemma~\ref{lem:stuck_bracket} despite this change, that
-this is not a critical error in the original paper.
+\subsection{Inaccuracies in the Original Proof}
 
-\todo{More.}
+We discovered a few small inaccuracies in \cite{InfoFlowML} by running into
+issues when formalizing the proofs in Coq.  Listed below are the primary
+corrections we were able to make.
+
+\begin{description}
+  \item[Non-nesting Brackets in Syntax]
+    \hspace{0pt}
+    
+    As seen in Figure~\ref{fig:syntax}, we have a slightly different syntax
+    structure for \langName from \origLang.  Specifically, we constructed
+    values, answers, and expressions explicitly to not allow nesting of
+    bracketed values.  This was not how the syntax figures in Simonet and
+    Pottier's paper defined this, and as a result, we had trouble when our
+    proofs depended on this explicit non-nesting property that was mentioned in
+    the prose of their paper.  Realizing that our definitions did not disallow
+    this by construction after running into issues in the proof, we were able to
+    fix the definition producing what is in Figure~\ref{fig:syntax}.
+    
+  \item[Correction of the Soundness Lemma]
+    \hspace{0pt}
+
+    Proving our own version of Lemma~\ref{lem:soundness} actually turned out to
+    be instructive because it forced us to recognize that the original
+    formulation in Simonet and Pottier's paper on \origLang wasn't exactly
+    correct as stated.  Specifically, it is entirely possible that a step in the
+    operational semantics does not translate to a step in the operational
+    semantics under either projection, as in the case of the \ref{eq:lift-app}
+    rule, where $\lift{e}_i$ and $\lift{e'}_i$ are identical.  Luckily, we are
+    fairly confident, given that we were still able to prove
+    Lemma~\ref{lem:stuck_bracket} despite this change, that this is not a
+    critical error in the original paper.
+\end{description}
+
+\todo{more?}
 
 \section{Related Work}
 \label{sec:related}
