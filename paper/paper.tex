@@ -34,9 +34,9 @@ noninterference for a simple language with security labels, \langName, based on
 Pottier and Simonet's \origLang.  This
 marks the first step towards writing a verified compiler for a language with
 information flow types.  Although we did not complete the full noninterference
-proof, we were able to find subtle inaccuracies in the \origLang proofs.  
-We discuss what would be involved in completing the proof and how this 
-relates to other work.
+proof, we were able to find subtle inaccuracies in \origLang's original
+formulation and theorems.  We discuss what would be involved in completing the
+proof and how this relates to other work.
 
 \section{Introduction}
 
@@ -46,7 +46,7 @@ These systems allow programmers to construct proofs of properties of their progr
 discuss in Section~\ref{sec:related}, these \emph{Proof Assistants} have been used to formalize,
 prove correct, and implement systems with verified properties.  This increases Programmers' confidence in their languages and programs; to prove correctness of a function is a much stronger guarantee than simply testing functionality (or asserting correctness in the absence of tests).
 
-The last decade has also seen a surge of research in languages which inforce information flow security, such as Jif~\cite{myers1999jflow} or FlowCaml~\cite{simonet2003flow}.  These languages provide features which programmers can use to enforce integrity and confidentiality of data as it is used throughout computations.
+The last decade has also seen a surge of research in languages which enforce information flow security, such as Jif~\cite{myers1999jflow} or FlowCaml~\cite{simonet2003flow}.  These languages provide features which programmers can use to enforce integrity and confidentiality of data as it is used throughout computations.
 
 Given the growing popularity of Proof Assistants information-flow languages, we were surprised to discover 
 that there has not been work done to formalize ad verify a language with a type systems which enforces information flow security policies.
@@ -251,7 +251,7 @@ simplifications we made in defining \langName, since there are no side effects
 or exceptions in the language.
 
 The language's type system includes subtyping, which allows data that have a
-lower label to flow into higher labelled data.  We use the notatoin $x \leq y$
+lower label to flow into higher labelled data.  We use the notation $x \leq y$
 to denote that $x$ is a subtype of $y$, whether both $x$ and $y$ are labels or
 types (as long as both are the same kind of value).  The rules for subtyping are
 given in Figure~\ref{fig:subtype_rules}.  Rule \textsc{S-Int} states that
@@ -366,7 +366,7 @@ branch must have a $pc$ equivalent to the security of the original $pc$ along
 with the security of the label on the value in the test, $l$.
 
 \textsc{V-Bracket} and \textsc{E-Bracket} both require that there exists a label
-from the set $H$ which representes an upward closed sublattice of the labels in
+from the set $H$ which represents an upward closed sublattice of the labels in
 the system representing what is considered to be ``high'' security for the
 purposes of the proof of noninterference, discussed later.  These rules require
 that the types of each branch of a bracketed value or expression can be typed
@@ -491,7 +491,7 @@ the bracketed expression in \langName.
     \textsf{ let } x := v \textsf{ in } e$]
     If $e$ is stuck and is an If-statement, then none of \ref{eq:lift-if}, \ref{eq:if-true}, and \ref{eq:if-false} applies. This means that $v$ can neither
     be an integer or some bracketed value.  As a result, $\lift{v}_i$ cannot
-    be an integer, and so is stuck.
+    be an integer, and so it is stuck.
   \end{case}
 
   \begin{case}[$e = < e_1 | e_2 >$]
@@ -519,7 +519,7 @@ the bracketed expression in \langName.
 
   As a result, we know that $e$ reduces to an answer, because otherwise it would
   be stuck and this would mean that one of the projections is also stuck by
-  Lemma~\ref{lem:stuck_bracket}, a contradicton.  Thus, we know that if both
+  Lemma~\ref{lem:stuck_bracket}, a contradiction.  Thus, we know that if both
   projections step to an answer, so must the original expression.
 \end{proof}
 
@@ -714,7 +714,7 @@ reduced form is also well typed, with the same type.
     $e = \text{if } <v_1 | v_2> \: e_1 \: e_2$ and $e' = e_i$ for some $i \in
     \{1, 2\}$ in this case.  Applying Lemma~\ref{lem:guard} to the first premise
     of \textsc{E-If} gives $l' \in H$ and $l' \guards t$.  Applying
-    Lemma~\ref{lem:projection} to the intial premises of \textsc{E-If} and using
+    Lemma~\ref{lem:projection} to the initial premises of \textsc{E-If} and using
     the result and applying \textsc{E-If} gives $\typeRule{pc \sqcup l}{e_i}$.
     We can then apply \textsc{E-Bracket} to get the goal.
   \end{case}
@@ -749,7 +749,7 @@ projections (so the value in either run of the program) are equivalent.
   which is the same under either projection.
 \end{proof}
 
-The noninteference theorem shows that if we have an expression that is typed
+The noninterference theorem shows that if we have an expression that is typed
 with a low label, then replacing any bracketed value in the expression with
 either projection will result in the same value for the overall expression.  In
 other words, if we vary any high security item in a low security expression, the
@@ -781,7 +781,11 @@ value must not be affected.
 As mentioned above, we unfortunately were unable to complete our noninterference
 proof in Coq by the time of this report.  As of this writing, we have written definitions of a small-step operational semantics, a big-step operational semantics, typing judgments, and typing derivations for \langName.  We have proven a few lemmas from section~\ref{sec:proof} relating to the operations semantics (including soundness), but remain mired in complexity on the remainder of the mechanization effort.  
 
-In the process of mechanizing these lemmas, we empirically observed that the process of translating English into Coq can involve a nearly fifty-fold increase in the size of even the most basic proofs.  While this was partially a natural effect of writing proofs in Coq, we found that much of the complexity stemmed from handling cases elided in the English-Language proofs; and in these cases we found hidden subtleties which appear to have escaped even Simonet and Pottier.
+In the process of mechanizing these lemmas, we empirically observed that the process of translating English into Coq can involve a nearly fifty-fold increase in the size of even the most basic proofs.  While this was partially a natural effect of writing proofs in Coq, we found that much of the complexity stemmed from handling cases elided in the English-Language proofs; and in these cases we found hidden subtleties which appear to have escaped even Simonet and Pottier. We found ourselves
+often surprised by the number of items that were elided by the proofs in the
+paper.  For example, the proof of Lemma~\ref{lem:soundness} is one line of
+natural language but turned out to be 40 lines of Coq code, not including all of
+the supporting definitions and rules.
 
 \subsection{Inaccuracies in the Original Proof}
 
@@ -833,9 +837,11 @@ of security and verified proofs and programs.  We are following in the footsteps
 of verified languages and compilers, which focus on writing programs and
 language specs that are verified to have the properties the authors want by
 providing the proofs of these properties on the
-definitions~\cite{strecker2002formal,leinenbach2005towards,dave2003compiler,leroy2009formally,leroy2006formal,leroy2009formal,leroy2012compcert,chlipala2010verified,berghofer2004extracting}.
-This has been a popular area, which is primarily focused on more mainstream
-languages and compilers (such as C and Java).
+definitions~\cite{strecker2002formal, leinenbach2005towards, dave2003compiler,
+leroy2009formally, leroy2006formal, leroy2009formal, leroy2012compcert,
+chlipala2010verified, berghofer2004extracting}.  This has been a popular area,
+which is primarily focused on more mainstream languages and compilers (such as C
+and Java).
 
 Another related avenue of research has been the work on proof carrying code,
 which involves a compiler producing a proof that the program satisfies some
@@ -859,7 +865,7 @@ that it is just a matter of time and effort.
 
 Once a full Coq proof of noninterference exists, a next step would be to
 integrate this proof and all of the related definitions into a verified type
-checking program, which could be intergrated into a verified compiler.  We
+checking program, which could be integrated into a verified compiler.  We
 already know that a full verified compiler has been done for C, and this gives
 us hope that it would be possible to implement something similar for a language
 like Jif.
