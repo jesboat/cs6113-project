@@ -678,7 +678,17 @@ reduced form is also well typed, with the same type.
 \begin{proof}
   By induction on the derivation of $e \to e'$.
   \begin{case}[$\beta$]
-    \todo{}
+    In this case, $e = (\textsf{fix} f . \lambda x . e_0) v$.  In the premises
+    of \textsc{E-App}, we have $\typeRule{ }{\textsf{fix} f . \lambda x .
+    e_0}{(t' \to t)^l}$ and $\typeRule{ }{v}{t'}$.  The derivation of the
+    function's type must end with \textsc{V-Abs} followed by some number of
+    applications of \textsc{V-Sub}.  Applying Lemma~\ref{lem:weakening} and
+    \textsc{E-Sub} to \text{V-Abs}'s premise gives $\typeRule{pc, (x \mapsto
+    t''; f \mapsto \theta)}{e'}{t}$ for some $t''$ and $\theta$ which are
+    subtypes of the function's type and the argument's type.  By \textsc{V-Sub},
+    $\typeRule{ }{v}{t''}$ and $\typeRule{ }{\textsc{fix} f . \lambda x .
+    e_0}{\theta}$.  Applying Lemma~\ref{lem:substitution} then gives
+    $\typeRule{pc}{e'}{t}$.
   \end{case}
 
   \begin{case}[if]
@@ -686,11 +696,17 @@ reduced form is also well typed, with the same type.
   \end{case}
 
   \begin{case}[let]
-    \todo{}
+    By \textsc{E-Let} and Lemma~\ref{lem:substitution}.
   \end{case}
 
   \begin{case}[lift-app]
-    \todo{}
+    $e = <v_1 | v_2> v$ in this case.  Then \textsc{E-App}'s premises are
+    $\typeRule{ }{<v_1 | v_2>}{(t' \to t)^l}$, $\typeRule{ }{v}{t'}$, and $l
+    \guards t$.  Lemma~\ref{lem:projection} gives $\typeRule{ }{v_i}{(t' \to
+    t)^l}$ and $\typeRule{ }{\lift{v}_i}{t'}$ for $i \in \{1, 2\}$.  Applying
+    \textsc{E-App} gives $\typeRule{pc \sqcup l}{v_i\lift{v}_i}{t}$.  Applying
+    Lemma~\ref{lem:guard} gives $l \in H$.  Since we have $l \guards t$, we can
+    apply \textsc{E-Bracket} to get $\typeRule{ }{e'}{t}$.
   \end{case}
 
   \begin{case}[lift-if]
@@ -698,7 +714,13 @@ reduced form is also well typed, with the same type.
   \end{case}
 
   \begin{case}[bracket]
-    \todo{}
+    In this case $e = <e_1 | e_2>$, and $e'$ is the result of taking a step in
+    one side of the brackets.  $e$'s typing derivation must end with
+    \textsc{E-Bracket}, which has premises $\typeRule{pc \sqcup pc'}{e_i}{t}$,
+    $\typeRule{pc \sqcup pc'}{e_j}{t}$, $pc' \guards t$, and $pc' \in H$.  Since
+    $pc' \in H$, we can apply the inductive hypothesis to get $\typeRule{pc
+    \sqcup pc'}{e_i'}{t}$ and $\typeRule{pc \sqcup pc'}{e_j'}{t}$.  The result
+    is then given by applying \textsc{E-Bracket}.
   \end{case}
 \end{proof}
 
