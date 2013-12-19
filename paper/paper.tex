@@ -753,10 +753,11 @@ value must not be affected.
 As mentioned above, we unfortunately were unable to complete our noninterference
 proof in Coq by the time of this report.  Given more time, we are confident that
 this could be completed however.  So far, we have proven the first few lemmas
-described in Section~\ref{sec:proof}.  This was much more difficult than the
-short natural language proofs would suggest, due to a combination of the
-stricter format required by Coq and the number of items that are elided in the
-proofs because they were considered trivial or obvious.
+described in Section~\ref{sec:proof} and defined relations for the operational
+semantics and type system as presented in Section~\ref{sec:lang}.  This was much
+more difficult than the short natural language proofs would suggest, due to a
+combination of the stricter format required by Coq and the number of items that
+are elided in the proofs because they were considered trivial or obvious.
 
 We found that the process of mechanizing the lemmas that we proved was a useful
 exercise in checking our understanding of our language, statements, and the work
@@ -803,9 +804,41 @@ programs~\cite{InfoFlowML,myers1999jflow}.
 \section{Future Work}
 \label{sec:future}
 
-\todo{Talk about stuff we still have to do for this to be a complete project.
-Talk about expected problems and required techniques.  Talk about what we could
-do once this project is completed and we could use it for other projects.}
+It is our hope that we could continue this work to complete a Coq proof of
+noninterference for our language.  This would require proving the lemmas and
+theorem in Section~\ref{sec:proof} along with various support lemmas and
+definitions for things that are ``obvious'' in the natural language proofs.
+It's unclear how long the remainder of the proof would take, but we are certain
+that it is just a matter of time and effort.
+
+Once a full Coq proof of noninterference exists, a next step would be to
+integrate this proof and all of the related definitions into a verified type
+checking program, which could be intergrated into a verified compiler.  We
+already know that a full verified compiler has been done for C, and this gives
+us hope that it would be possible to implement something similar for a language
+like Jif.
+
+With a verified compiler for such a language, it would be possible to implement
+a compiler that produced proofs of noninterference to be carried around with the
+compiled program.  This would be interesting in distributed settings where we
+would like to ship code around to others to run on their own machines.  There is
+already a paper on the subject of mobile code for the Fabric
+language~\cite{liu2009fabric}, a distributed computing variant of Jif,
+discussing the problem of ``mobile code'', which operates by having the client
+compile the code themselves~\cite{arden2012sharing}.  A proof-carrying code
+system could possibly remove the need for the target machine to compile the code
+themselves in order to ensure trust requirements are met.
+
+Another use of a verified compiler would be the ability to verify extensions to
+the language.  For example, the Jif and Fabric programming languages are
+actively worked on and has seen multiple extensions over the years.  Although
+it's pretty certain extensions to these languages that are published are
+correct, requiring these extensions to be added to a verified compiler would
+help ensure that the language updates will not invalidate pre-existing security
+properties of the language, because adding the extension would require adding
+code to cover the additional cases in the proofs.
+
+\todo{more.}
 
 \section{Conclusion}
 \label{sec:conclusion}
