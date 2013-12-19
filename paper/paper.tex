@@ -692,7 +692,10 @@ reduced form is also well typed, with the same type.
   \end{case}
 
   \begin{case}[if]
-    \todo{}
+    $e = \textsf{if } v \: e_1 \: e_2$ and $e' = e_i$ where $i$ is determined by
+    the value of $v$.  \textsc{E-If}'s premises include $\typeRule{pc
+    \sqcup l}{e_i}{t}$ for $i \in \{1, 2\}$ and $l \guards t$, which follows
+    from Lemma~\ref{lem:weakening}.
   \end{case}
 
   \begin{case}[let]
@@ -710,7 +713,12 @@ reduced form is also well typed, with the same type.
   \end{case}
 
   \begin{case}[lift-if]
-    \todo{}
+    $e = \text{if } <v_1 | v_2> \: e_1 \: e_2$ and $e' = e_i$ for some $i \in
+    \{1, 2\}$ in this case.  Applying Lemma~\ref{lem:guard} to the first premise
+    of \textsc{E-If} gives $l' \in H$ and $l' \guards t$.  Applying
+    Lemma~\ref{lem:projection} to the intial premises of \textsc{E-If} and using
+    the result and applying \textsc{E-If} gives $\typeRule{pc \sqcup l}{e_i}$.
+    We can then apply \textsc{E-Bracket} to get the goal.
   \end{case}
 
   \begin{case}[bracket]
