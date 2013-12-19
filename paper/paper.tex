@@ -74,7 +74,7 @@ with a result that is an instance of one of these ``pairs.''
 
 In this paper we will present our simplified language, \langName,
 along with its semantics and type system (Section~\ref{sec:lang}).  We will then
-present a natural language, human readable, proof of noninterference for the
+present a natural language proof of noninterference for the
 language and discuss our experiences with mechanizing this proof in the Coq
 proof assistant (Sections~\ref{sec:proof} and \ref{sec:mechanizing}).  Finally,
 we will discuss related work, next steps, and conclude
@@ -85,20 +85,20 @@ we will discuss related work, next steps, and conclude
 
 Our toy language for proving noninterference, \langName, is a simplified version
 of \origLang from Simonet and Pottier's paper~\cite{InfoFlowML}.  Since we had a
-limited amount of time to work on this project, we limited ourselves to a subset
+limited amount of time to work on this project, we restricted ourselves to a subset
 of the language that drops the following features:
 
 \begin{itemize}
   \item References and associated memory operations.
-  \item Paired values.
+  \item Value Tuples.
   \item Exceptions.
   \item Sequencing operations.
 \end{itemize}
 
-While the language becomes much much less interesting for actual programming, we
+While the language becomes much more burdensome for the programmer, we
 feel that these features do not fundamentally change the problem of proving
-noninterference.  In order to mechanize a proof of noninterference for a
-language closer to \origLang, it would require simply adding mechanized proofs
+noninterference.  Mechanizing a proof of noninterference for a
+language closer to \origLang would require simply adding mechanized proofs
 for the additional cases where appropriate.
 
 Furthermore, primarily due to a matter of taste, we decided to replace the
