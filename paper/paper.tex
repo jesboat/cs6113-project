@@ -314,7 +314,7 @@ our language are given in Figure~\ref{fig:guard_rules}.
 \end{figure}
 
 Figure~\ref{fig:value_types} includes typing judgements for values in the
-language, which are mostly straight forward with the exception of
+language, which are mostly straightforward with the exception of
 \textsc{V-Bracket}, which we discuss below along with the type rules for
 expressions.
 
@@ -443,8 +443,7 @@ security information.
 \label{sec:proof}
 
 Before discussing the task of mechanizing a noninterference proof for \langName,
-it is useful to first view what the natural language proof would look like
-first.  We first start by proving some supporting lemmas about the language's
+it is useful to first view the natural language proof.  We first start by proving some supporting lemmas about the language's
 semantics and type system, and finish with a proof of noninterference for the
 language.  Since \langName is a stripped down version of \origLang, the proofs
 will look like a simplified version of the proofs found in Pottier and Simonet's
@@ -490,9 +489,9 @@ the bracketed expression in \langName.
 
   \begin{case}[$e = \textsf{ if } v \: e_1 \: e_2$ or $e =
     \textsf{ let } x := v \textsf{ in } e$]
-    These are similar to the previous case.  The value $v$ can not be an integer
-    and so the lifted version of $v$ can not be an integer, meaning the lifted
-    expression is also stuck.
+    If $e$ is stuck and is an If-statement, then none of \ref{eq:lift-if}, \ref{eq:if-true}, and \ref{eq:if-false} applies. This means that $v$ can neither
+    be an integer or some bracketed value.  As a result, $\lift{v}_i$ cannot
+    be an integer, and so is stuck.
   \end{case}
 
   \begin{case}[$e = < e_1 | e_2 >$]
