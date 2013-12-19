@@ -820,15 +820,17 @@ corrections we were able to make.
 
     Proving our own version of Lemma~\ref{lem:soundness} actually turned out to
     be instructive because it forced us to recognize that the original
-    formulation in Simonet and Pottier's paper on \origLang~\cite{InfoFlowML}
-    wasn't exactly correct as stated.  Specifically, it is entirely possible
-    that a step in the operational semantics does not translate to a step in the
-    operational semantics under either projection, as in the case of the
-    \ref{eq:lift-app} rule, where $\lift{e}_i$ and $\lift{e'}_i$ are identical.
-    Luckily, we are fairly confident, given that we were still able to prove
+    formulation in Simonet and Pottier's paper on \origLang wasn't exactly
+    correct as stated.  Specifically, it is entirely possible that a step in the
+    operational semantics does not translate to a step in the operational
+    semantics under either projection, as in the case of the \ref{eq:lift-app}
+    rule, where $\lift{e}_i$ and $\lift{e'}_i$ are identical.  Luckily, we are
+    fairly confident, given that we were still able to prove
     Lemma~\ref{lem:stuck_bracket} despite this change, that this is not a
     critical error in the original paper.
 \end{description}
+
+\todo{more?}
 
 \section{Related Work}
 \label{sec:related}
