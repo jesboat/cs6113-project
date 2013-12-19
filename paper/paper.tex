@@ -228,15 +228,15 @@ Section~\ref{sec:proof}.
 
 \subsection{Type System}
 
-\langName has a very simple type system, including only integers and lambda
-abstractions, which include fixpoints by default, along with appropriate
+\langName has a very simple type system. It consists of only integers and lambda
+abstractions (which include fixpoints by default) along with appropriate
 security labels for both, as shown in Figure~\ref{fig:types}.  In \langName,
-security labels specify confidentiality policies, specifying what other data the
+security labels denote confidentiality policies, which specify what other data the
 labelled data can affect.\footnote{It is not difficult to imagine how to extend
 our system to include integrity labels.  However, for the sake of simplicity, we
 decided to concern ourselves with only confidentiality at first}  Data can only
 be affected by items at the same label or lower (so high data can not affect low
-labelled data).
+data).
 
 \begin{figure}[t]
   \begin{align*}
@@ -247,8 +247,8 @@ labelled data).
 \end{figure}
 
 A reader familiar with the type system for \origLang will notice that our type
-system does not include labels above the arrow in the function type, which would
-normally give security bounds on side effects of the function, nor does it
+system does not include labels above the arrow in the function type (which would
+normally give security bounds on side effects of the function) nor does it
 include effect labels for exceptions.  These are dropped as a result of the
 simplifications we made in defining \langName, since there are no side effects
 or exceptions in the language.
@@ -291,7 +291,7 @@ type, we follow the example of Simonet and Pottier~\cite{InfoFlowML} and define
 a ``guards'' relation between labels and types, denoted $l \guards t$, which
 states that the label $l$ is at least as restrictive as the label on the type
 $t$.  In other words, this requires that the type has at least $l$ for its
-security label.  The two rules regarding this relationships for both types in
+security label.  The two rules regarding this relationship for both types in
 our language are given in Figure~\ref{fig:guard_rules}.
 
 \begin{figure}[t]
@@ -317,9 +317,8 @@ our language are given in Figure~\ref{fig:guard_rules}.
 \end{figure}
 
 Figure~\ref{fig:value_types} includes typing judgements for values in the
-language, which are mostly straightforward with the exception of
-\textsc{V-Bracket}, which we discuss below along with the type rules for
-expressions.
+language, which are mostly straightforward. The exception is
+\textsc{V-Bracket}, which we discuss below.
 
 \begin{figure*}[t]
   \begin{mathpar}
