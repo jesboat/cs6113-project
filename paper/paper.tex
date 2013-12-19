@@ -44,7 +44,7 @@ Verified systems have been growing in popularity recently with the rise of proof
 assistants like Coq and NuPRL~\cite{coqart,nuprl}.  These systems allow
 programmers to construct proofs of properties of their programs which are
 checked and compiled by the system.  As we will discuss in
-Section~\ref{sec:related}, these \emph{Proof Assistants} have been used to
+Section~\ref{sec:related}, these \emph{proof assistants} have been used to
 formalize, prove correct, and implement systems with verified properties.  This
 increases programmers' confidence in their languages and programs; to prove
 correctness of a function is a much stronger guarantee than simply testing
@@ -56,8 +56,8 @@ FlowCaml~\cite{simonet2003flow}.  These languages provide features which
 programmers can use to enforce integrity and confidentiality of data as it is
 used throughout computations.
 
-Given the growing popularity of Proof Assistants information-flow languages, we
-were surprised to discover that there has not been work done to formalize ad
+Given the growing popularity of proof assistants and information-flow languages,
+we were surprised to discover that there has not been work done to formalize ad
 verify a language with a type system which enforces information flow security
 policies.  These languages seem a natural choice for formal verification, as it
 is desirable for programs written in these languages to be accompanied with a
@@ -829,7 +829,7 @@ remained usable in future proofs.
     of bracketed values.  The syntax defined by Simonet and Pottier did allow
     for this nesting, and authors dismissed is as a non-sensible construction.
     Unfortunately, allowing such syntactic nesting prevents the completeness
-    Lemma from being proveable.  Realizing that our definitions did not disallow
+    Lemma from being provable.  Realizing that our definitions did not disallow
     this by construction after running into issues in the proof, we were able to
     fix the definition, producing what is in Figure~\ref{fig:syntax}.
     
@@ -883,8 +883,8 @@ definitions for things that are ``obvious'' in the natural language proofs.
 It's unclear how long the remainder of the proof would take, but we are certain
 that it is just a matter of time and effort.
 
-Once our noninterference proof has been sucessfully mechanized for \langName, we
-will incrementally enhance the features of \langName, adding in absent
+Once our noninterference proof has been successfully mechanized for \langName,
+we will incrementally enhance the features of \langName, adding in absent
 constructs such as bind, references, and exceptions.  We will then re-state and
 re-prove the noninterference result in a language very much like \origLang.
 
