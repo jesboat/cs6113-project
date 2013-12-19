@@ -8,8 +8,8 @@
 %\floatstyle{boxed}
 %\restylefloat{figure}
 
-\newcommand{\langName}[0]{TinyML\textsuperscript{2}}
-\newcommand{\origLang}[0]{CoreML\textsuperscript{2}}
+\newcommand{\langName}[0]{TinyML\textsuperscript{2}~}
+\newcommand{\origLang}[0]{CoreML\textsuperscript{2}~}
 \newcommand{\typeRule}[3]{#1 \vdash #2 \colon #3}
 \newcommand{\guards}[0]{\lhd}
 \newcommand{\lift}[1]{\lfloor #1 \rfloor}
@@ -65,7 +65,7 @@ mechanizing proofs of information-flow languages.
 
 Our language and proof, \langName, are a simplified version of what is
 presented in Simonet and Pottier's work on information flow for an ML-like
-language, \origLang~\cite{InfoFlowML}.  The proof proceeds by designing a
+language, \origLang \cite{InfoFlowML}.  The proof proceeds by designing a
 core language, extending it with a term that represents a ``pair'' of 
 values varied across two executions, and introducing these ``pairs'' of 
 values in contexts where the value would have a high-security label.
@@ -116,7 +116,7 @@ expressions that have high security labels on their types.
 
 Through these changes, our language has the syntax shown in
 Figure~\ref{fig:syntax}.  As shown, final states (answers) in the language are
-now simple values because there are no exceptions.
+now simple values.
 
 \begin{figure}[t]
   \begin{align}
@@ -804,7 +804,7 @@ provable and remained usable in future proofs.
     \hspace{0pt}
     
     As seen in Figure~\ref{fig:syntax}, we have a slightly different syntax
-    structure for \langName ~than was seen in~ \origLang.  Specifically, we constructed
+    structure for \langName than was seen in~ \origLang.  Specifically, we constructed
     values, answers, and expressions explicitly to not allow nesting of
     bracketed values.  The syntax defined by Simonet and Pottier did allow
     for this nesting, and authors dismissed is as a non-sensible
@@ -819,7 +819,7 @@ provable and remained usable in future proofs.
 
     Proving our own version of Lemma~\ref{lem:soundness} was uniquely
     instructive because it forced us to recognize that the original
-    formulation in Simonet and Pottier's paper on \origLang ~wasn't 
+    formulation in Simonet and Pottier's paper on \origLang wasn't 
     correct as stated.  Simonet and Pottier's Lemma asserts that 
     if $e \rightarrow e'$, then $\lift{e}_i \rightarrow \lift{e'}_i$.
     This does not hold in the case where $e$ is of the form $<v1 | v2> v$;
