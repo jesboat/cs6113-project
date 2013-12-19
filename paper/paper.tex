@@ -35,8 +35,8 @@ Pottier and Simonet's \origLang.  This
 marks the first step towards writing a verified compiler for a language with
 information flow types.  Although we did not complete the full noninterference
 proof, we were able to find subtle inaccuracies in \origLang's original
-formulation.  We discuss what would be involved in completing the proof and how
-this relates to other work.
+formulation and theorems.  We discuss what would be involved in completing the
+proof and how this relates to other work.
 
 \section{Introduction}
 
@@ -491,7 +491,7 @@ the bracketed expression in \langName.
     \textsf{ let } x := v \textsf{ in } e$]
     If $e$ is stuck and is an If-statement, then none of \ref{eq:lift-if}, \ref{eq:if-true}, and \ref{eq:if-false} applies. This means that $v$ can neither
     be an integer or some bracketed value.  As a result, $\lift{v}_i$ cannot
-    be an integer, and so is stuck.
+    be an integer, and so it is stuck.
   \end{case}
 
   \begin{case}[$e = < e_1 | e_2 >$]
