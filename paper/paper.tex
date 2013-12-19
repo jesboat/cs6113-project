@@ -101,12 +101,12 @@ noninterference.  Mechanizing a proof of noninterference for a
 language closer to \origLang would require simply adding mechanized proofs
 for the additional cases where appropriate.
 
-Furthermore, primarily due to a matter of taste, we decided to replace the
-\textsf{case} construct from \origLang for an \textsf{if} construct, which
+We also decided to replace the
+\textsf{case} construct from \origLang with an \textsf{if} construct, which
 evaluates the first expression if the test evaluates to 1 and evaluates to the
 second expression otherwise.
 
-\langName, like \origLang, includes angle bracketed expressions, which represent
+\langName, like \origLang, includes angle bracketed expressions which represent
 values or expressions which could differ between two runs of the program.  As we
 will see when discussing the type system, this corresponds to values and
 expressions that have high security labels on their types.
