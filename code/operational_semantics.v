@@ -3,7 +3,7 @@ Require Export Arith.
 Require Export Arith.EqNat.  (* Contains [beq_nat], among other things *)
 Require Export SfLib.
 
-Inductive environment : Type :=
+Inductive environment : Set :=
 | Empty_Env : environment
 | Env : (variable_name * value) -> environment -> environment.
 

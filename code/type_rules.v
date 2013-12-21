@@ -27,7 +27,7 @@ Inductive guards : label_type -> type -> Prop :=
 | G_Abs : forall (t1 t2 : type) (l l' : label_type),
   label_subtype l l' -> guards l (Fix_t t1 t2 l').
 
-Inductive context : Type :=
+Inductive context : Set :=
 | empty : context
 | extend : context -> variable_name -> type -> context.
 

@@ -88,7 +88,7 @@
       #;(begin
         (display-to-file 
          "
-  Inductive variable_name : Type := " "identifiers.v" #:mode 'text #:exists 'replace)
+  Inductive variable_name : Set := " "identifiers.v" #:mode 'text #:exists 'replace)
         (map (lambda (x) (display-to-file (string-append 
                                            "
   | " (string-append x " : variable_name")) "identifiers.v" #:mode 'text #:exists 'append))
