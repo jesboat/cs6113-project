@@ -15,6 +15,7 @@ Require Export Bool.
 Require Export List.
 Require Export Arith.
 Require Export Arith.EqNat.  (* Contains [beq_nat], among other things *)
+Require Import Setoid.
 
 (** * From Basics.v *)
 
@@ -47,16 +48,6 @@ Tactic Notation "SSSSSCase" constr(name) := Case_aux SSSSSCase name.
 Tactic Notation "SSSSSSCase" constr(name) := Case_aux SSSSSSCase name.
 Tactic Notation "SSSSSSSCase" constr(name) := Case_aux SSSSSSSCase name.
 
-Fixpoint ble_nat (n m : nat) : bool :=
-  match n with
-  | O => true
-  | S n' =>
-      match m with
-      | O => false
-      | S m' => ble_nat n' m'
-      end
-  end.
-
 Theorem andb_true_elim1 : forall b c,
   andb b c = true -> b = true.
 Proof.
@@ -70,76 +61,34 @@ Proof.
 Theorem andb_true_elim2 : forall b c,
   andb b c = true -> c = true.
 Proof.
-(* An exercise in Basics.v *)
-Admitted.
-
-Theorem beq_nat_sym : forall (n m : nat),
-  beq_nat n m = beq_nat m n.
-(* An exercise in Lists.v *)
-Admitted.
-
-(** * From Props.v *)
-
-Inductive ev : nat -> Prop :=
-  | ev_0 : ev O
-  | ev_SS : forall n:nat, ev n -> ev (S (S n)).
+    destruct b; destruct c; auto.
+Qed.
 
 (** * From Logic.v *)
 
-Theorem andb_true : forall b c,
-  andb b c = true -> b = true /\ c = true.
-Proof.
-  intros b c H.
-  destruct b.
-    destruct c.
-      apply conj. reflexivity. reflexivity.
-      inversion H.
-    inversion H.  Qed.
-
-Theorem false_beq_nat: forall n n' : nat,
-     n <> n' ->
-     beq_nat n n' = false.
-Proof. 
-(* An exercise in Logic.v *)
-Admitted.
-
-Theorem ex_falso_quodlibet : forall (P:Prop),
-  False -> P.
-Proof.
-  intros P contra.
-  inversion contra.  Qed.
-
-Theorem ev_not_ev_S : forall n,
-  ev n -> ~ ev (S n).
-Proof. 
-(* An exercise in Logic.v *)
-Admitted.
-
-Theorem ble_nat_true : forall n m,
-  ble_nat n m = true -> n <= m.
-(* An exercise in Logic.v *)
-Admitted.
-
-Theorem ble_nat_false : forall n m,
-  ble_nat n m = false -> ~(n <= m).
-(* An exercise in Logic.v *)
-Admitted.
-
-Inductive appears_in (n : nat) : list nat -> Prop :=
+Inductive appears_in {T : Type} (n : T) : list T -> Prop :=
 | ai_here : forall l, appears_in n (n::l)
 | ai_later : forall m l, appears_in n l -> appears_in n (m::l).
 
-Inductive next_nat (n:nat) : nat -> Prop :=
-  | nn : next_nat n (S n).
-
-Inductive total_relation : nat -> nat -> Prop :=
-  tot : forall n m : nat, total_relation n m.
-
-Inductive empty_relation : nat -> nat -> Prop := .
+Theorem appears_in__In {T : Type} : forall (n : T) (lst : list T),
+    appears_in n lst <-> In n lst.
+Proof.
+    intros n; induction lst.
+    Case "empty". simpl. split; intro H; inversion H.
+    Case "nonempty".
+      split; intros H; inversion H; subst; simpl;
+        try solve [ firstorder | constructor ].
+      constructor 2. tauto.
+Qed.
 
 (** * From Later Files *)
 
 Definition relation (X:Type) := X -> X -> Prop.
+
+Inductive total_relation {T : Type} : T -> T -> Prop :=
+  tot : forall n m, total_relation n m.
+
+Inductive empty_relation {T : Type} : T -> T -> Prop := .
 
 Definition deterministic {X: Type} (R: relation X) :=
   forall x y1 y2 : X, R x y1 -> R x y2 -> y1 = y2. 
@@ -170,7 +119,52 @@ Theorem multi_trans :
       multi R y z ->
       multi R x z.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros X R x y z Hxy Hyz.
+  induction Hxy; [ trivial | eapply multi_step; eauto ].
+Qed. 
+
+Module RelExtra.
+
+  Definition partial_function {X: Type} (R: relation X) :=
+    forall x y1 y2 : X, R x y1 -> R x y2 -> y1 = y2. 
+
+  Definition reflexive {X: Type} (R: relation X) :=
+    forall a : X, R a a.
+
+  Definition transitive {X: Type} (R: relation X) :=
+    forall a b c : X, (R a b) -> (R b c) -> (R a c).
+
+  Definition symmetric {X: Type} (R: relation X) :=
+    forall a b : X, (R a b) -> (R b a).
+
+  Definition antisymmetric {X: Type} (R: relation X) :=
+    forall a b : X, (R a b) -> (R b a) -> a = b.
+
+  Definition equivalence {X:Type} (R: relation X) :=
+    (reflexive R) /\ (symmetric R) /\ (transitive R).
+
+  Definition order {X:Type} (R: relation X) :=
+    (reflexive R) /\ (antisymmetric R) /\ (transitive R).
+
+  Definition preorder {X:Type} (R: relation X) :=
+    (reflexive R) /\ (transitive R).
+
+  Inductive clos_refl_trans {A: Type} (R: relation A) : relation A :=
+      | rt_step : forall x y, R x y -> clos_refl_trans R x y
+      | rt_refl : forall x, clos_refl_trans R x x
+      | rt_trans : forall x y z,
+            clos_refl_trans R x y ->
+            clos_refl_trans R y z ->
+            clos_refl_trans R x z.
+
+  Inductive refl_step_closure {X:Type} (R: relation X) : relation X :=
+    | rsc_refl  : forall (x : X), refl_step_closure R x x
+    | rsc_step : forall (x y z : X),
+                      R x y ->
+                      refl_step_closure R y z ->
+                      refl_step_closure R x z.
+
+End RelExtra.
 
 (**  Identifiers and polymorphic partial maps. *)
 
@@ -179,27 +173,37 @@ Inductive id : Type :=
 
 Theorem eq_id_dec : forall id1 id2 : id, {id1 = id2} + {id1 <> id2}.
 Proof.
-   intros id1 id2.
-   destruct id1 as [n1]. destruct id2 as [n2].
-   destruct (eq_nat_dec n1 n2) as [Heq | Hneq].
-   Case "n1 = n2".
-     left. rewrite Heq. reflexivity.
-   Case "n1 <> n2".
-     right. intros contra. inversion contra. apply Hneq. apply H0.
+  decide equality. apply eq_nat_dec.
 Defined. 
+
+Definition beq_id (id1 id2 : id) : bool :=
+  match id1, id2 with
+  | Id n1, Id n2 => beq_nat n1 n2
+  end.
+
+Theorem beq_id__eq (id1 id2 : id) :
+    beq_id id1 id2 = true <-> id1 = id2.
+Proof.
+  destruct id1 as [n1]; destruct id2 as [n2].
+  pose proof (beq_nat_true_iff n1 n2).
+  setoid_replace (Id n1 = Id n2) with (n1 = n2)
+      by (firstorder; congruence).
+  tauto.  
+Qed.
 
 Lemma eq_id : forall (T:Type) x (p q:T), 
               (if eq_id_dec x x then p else q) = p. 
 Proof.
   intros. 
-  destruct (eq_id_dec x x); try reflexivity. 
-  apply ex_falso_quodlibet; auto.
+  destruct (eq_id_dec x x); congruence.
 Qed.
 
 Lemma neq_id : forall (T:Type) x y (p q:T), x <> y -> 
                (if eq_id_dec x y then p else q) = q. 
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  destruct (eq_id_dec x y); congruence.
+Qed.
 
 Definition partial_map (A:Type) := id -> option A.
 

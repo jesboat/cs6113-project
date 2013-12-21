@@ -2,7 +2,6 @@ Require Export syntax.
 Require Export Arith.
 Require Export Arith.EqNat.  (* Contains [beq_nat], among other things *)
 Require Export SfLib.
-Require Export Rel.
 
 Inductive environment : Type :=
 | Empty_Env : environment
@@ -250,20 +249,15 @@ Inductive step : expression -> expression -> Prop :=
                 Expression_Evaluation_Pair e1 e2 ==> Expression_Evaluation_Pair e1 e2'
   where " t '==>' t' " := (step t t').
 
-Definition stepmany := refl_step_closure step.
-Notation " t '==>*' t' ":= (stepmany t t') (at level 40).
+Notation multistep := (multi step).
+Notation " t '==>*' t' ":= (multistep t t') (at level 40).
 
 Lemma step_implies_stepmany : forall t t', t ==> t' -> t ==>* t'.
-  Proof.
-    intros.
-    assert (t ==>* t) by apply rsc_refl.
-    apply (rsc_step step t t'); try assumption; try apply rsc_refl.
-  Qed.
+Proof.
+  intros.
+  eapply multi_step. eassumption. econstructor.
+Qed.
   
-Lemma stepmany_refl : forall t, t ==>* t.
-  Proof. intros; apply rsc_refl. Qed.
-
-
 (*  Lemma step_many_and_difference_implies_step : 
     forall t t', (not (t = t')) -> t ==>* t' -> exists mid, t ==>* mid -> mid ==> t'.
     Proof.
@@ -332,7 +326,7 @@ Proof.
   Case "Expression_Evaluation_Pair".
     intros e1 Hreduces. inversion Hreduces; subst.
     SCase "left stepped". simpl. apply IHe0. assumption.
-    SCase "right stepped". simpl. apply stepmany_refl.
+    SCase "right stepped". simpl. constructor.
   Case "Value".
     intros e1 Hreduces. inversion Hreduces.
   Case "Application".
@@ -345,7 +339,7 @@ Proof.
       apply step_implies_stepmany in BR. apply BR.
     SCase "Lift_App_R".
       simpl.
-      rewrite left_branch_val_idem.  apply stepmany_refl.
+      rewrite left_branch_val_idem.  econstructor.
   Case "Let_Bind".
     intros e1 Hreduces. 
     inversion Hreduces; subst.
