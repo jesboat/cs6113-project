@@ -1,7 +1,9 @@
-Require Export syntax.
-Require Export Arith.
-Require Export Arith.EqNat.  (* Contains [beq_nat], among other things *)
 Require Export SfLib.
+Require Export syntax.
+Require Import Setoid.
+Require Import Classical. (* :( *)
+
+Close Scope signature_scope. (* conflicts with our `==>` *)
 
 Inductive environment : Set :=
 | Empty_Env : environment
@@ -218,7 +220,9 @@ Fixpoint reduction_rules_env (env : environment) (expr : expression) (recursion_
     | 0 => None (* we will prove that this case never fires *)
   end.
 
+(*
 Reserved Notation " t '==>' t' " (at level 40).
+*)
 
 Inductive step : expression -> expression -> Prop :=
 | Beta_Reduction_R : forall t f x e v,
@@ -295,7 +299,7 @@ Lemma left_branch_idem : forall e, (left_branch (left_branch e)) = (left_branch 
   Case "values". clear left_branch_val_idem.
   induction v; simpl; try (rewrite left_branch_idem); auto.  
 Qed.
-  
+
 Lemma left_branch_still_unequal: forall t v, t <> v -> 
                          (forall typ f x e, t <> Fix typ f x e) ->
                          (forall a b c, t <> (Value_Evaluation_Pair a b c)) -> 
@@ -367,53 +371,485 @@ Definition normal_form {X:Type} (R:relation X) (t:X) : Prop :=
 
 Inductive is_value : expression -> Prop :=
   | is_value_v : forall v, is_value (Value v)
-  | is_value_pair : forall v1 v2, is_value (Expression_Evaluation_Pair (Value v1) (Value v2)).
+  | is_value_pair : forall v1 v2,
+      is_value v1 -> is_value v2 ->
+      is_value (Expression_Evaluation_Pair v1 v2).
 
 Definition stuck (t:expression) : Prop :=
   (normal_form step) t /\ ~ is_value t.
 
-Require Classical.
-
-Lemma stuck_or_not : forall e, stuck e \/ ~ stuck e.
+Lemma values_dont_step : forall e, is_value e -> ~exists e', e ==> e'.
 Proof.
-  intros. apply Classical_Prop.classic. Qed.
-
-Lemma lemma_3_micro : forall e,
-                        (forall a b, e <> Expression_Evaluation_Pair a b) ->
-                        (stuck e) -> (stuck (left_branch e))  \/ (stuck (right_branch e)).
-  Proof.
-    intros e Hnotpair H.
-    intros. destruct e. 
-    Case "value".
-      unfold stuck in H. inversion  H. contradict H1. constructor. 
-    Case "Application".
-      unfold stuck in H. inversion H. unfold normal_form in H0. 
-      destruct v;
-        try solve [ simpl; left; unfold stuck; split;
-                    [ intro contra; solve by inversion 2
-                    | intro contra; solve by inversion ] ];
-            contradict H0; repeat econstructor.
-    Case "Let_Bind". unfold stuck in H. inversion H. unfold normal_form in H0. contradict H0.
-     econstructor. econstructor. 
-    Case "If". unfold stuck in H. inversion H. unfold normal_form in H0. contradict H0. 
-     destruct v;
-        try solve [econstructor; apply Ifelse_R; intros; discriminate].
-      SCase "Integer". compare n 1; intro Hn1; subst.
-        SSCase "true". econstructor. apply If1_R.
-        SSCase "false". econstructor. apply Ifelse_R. intros. congruence. intros; congruence.
-      SCase "Value_Evaluation_Pair". econstructor. apply Lift_If_R. 
-    Case "Expression_Evaluation_Pair". 
-      specialize (Hnotpair e1 e2). congruence.
+  induction e; intros Hisv; inversion Hisv; subst.
+  Case "Value".
+    intros Hsteps. inversion_clear Hsteps as [e' He'].
+    inversion He'.
+  Case "E_E_P of values".
+    intros Hsteps. inversion_clear Hsteps as [e' He'].
+    inversion He'; subst.
+      specialize (IHe1 H1); contradict IHe1; eauto.
+      specialize (IHe2 H2); contradict IHe2; eauto.
 Qed.
 
+Lemma steppers_not_stuck : forall e e', e ==> e' -> ~stuck e.
+Proof.
+  intros e e' Hred Hstuck. inversion_clear Hstuck as [Hnf Hnonval].
+  unfold normal_form in Hnf; contradict Hnf. eauto.
+Qed.
+
+Lemma steppers_not_stuck' : forall e, (exists e', e ==> e') -> ~stuck e.
+Proof.
+  intros e He' Hstuck. inversion_clear Hstuck as [Hnf Hnonval].
+  unfold normal_form in Hnf. contradiction.
+Qed.
+
+Lemma eep_steps_pieces_step : forall e1 e2 e',
+    (Expression_Evaluation_Pair e1 e2) ==> e'
+    -> (exists e1', e1 ==> e1')
+    \/ (exists e2', e2 ==> e2').
+Proof.
+  intros e1 e2 e' Hsteps; inversion_clear Hsteps.
+  Case "e1 steps". left. eauto.
+  Case "e2 steps". right. eauto.
+Qed.
+
+Lemma eep_steps_pieces_step' : forall e1 e2,
+    (exists e', (Expression_Evaluation_Pair e1 e2) ==> e')
+    -> (exists e1', e1 ==> e1')
+    \/ (exists e2', e2 ==> e2').
+Proof.
+  intros e1 e2 [e' Hsteps]; inversion_clear Hsteps.
+  Case "e1 steps". left. eauto.
+  Case "e2 steps". right. eauto.
+Qed.
+
+Theorem stuck_or_not : forall e, stuck e \/ ~stuck e.
+Proof.
+  induction e.
+  Case "value".
+    right. apply values_not_stuck.
+  Case "application".
+    destruct v;
+      try solve [ left; split; intro; solve by inversion 2 ].
+    SCase "Fix".
+      right. eapply steppers_not_stuck. econstructor.
+    SCase "Value_Evaluation_Pair".
+      right. eapply steppers_not_stuck. econstructor.
+  Case "Let".
+    right. eapply steppers_not_stuck. econstructor.
+  Case "If1".
+    right.
+    destruct v;
+      try solve [ eapply steppers_not_stuck; econstructor; congruence ].
+    SCase "intever".
+      compare n 1; intro Hn1; try (subst n);
+        solve [ eapply steppers_not_stuck; econstructor; congruence ].
+    SCase "VEP".
+      eapply steppers_not_stuck. eapply Lift_If_R.
+  Case "EEP".
+    apply Classical_Prop.classic. (* XXX necessary? *)
+Qed.
+
+Function left_branch_1 (e : expression) :=
+  match e with
+  | Expression_Evaluation_Pair e1 e2 => e1
+  | Value v => Value (left_branch_1_val v)
+  | Application f a => Application (left_branch_1_val f) (left_branch_1_val a)
+  | Let_Bind nm vl e => Let_Bind nm (left_branch_1_val vl) (left_branch_1 e)
+  | If1 t b1 b2 => If1 (left_branch_1_val t) (left_branch_1 b1) (left_branch_1 b2)
+  end
+
+with left_branch_1_val (val : value) {struct val} :=
+  match val with
+    | Identifier t vn => val
+    | Integer _ _ => val
+    | Fix t f a b => Fix t f a (left_branch_1 b)
+    | Value_Evaluation_Pair t l r => l
+  end.
+
+Function right_branch_1 (e : expression) :=
+  match e with
+  | Expression_Evaluation_Pair e1 e2 => e2
+  | Value v => Value (right_branch_1_val v)
+  | Application f a => Application (right_branch_1_val f) (right_branch_1_val a)
+  | Let_Bind nm vl e => Let_Bind nm (right_branch_1_val vl) (right_branch_1 e)
+  | If1 t b1 b2 => If1 (right_branch_1_val t) (right_branch_1 b1) (right_branch_1 b2)
+  end
+
+with right_branch_1_val (val : value) {struct val} :=
+  match val with
+    | Identifier t vn => val
+    | Integer _ _ => val
+    | Fix t f a b => Fix t f a (right_branch_1 b)
+    | Value_Evaluation_Pair t l r => r
+  end.
+
+Function paircount (e : expression) :=
+  match e with
+  | Expression_Evaluation_Pair e1 e2 => 1 + paircount e1 + paircount e2
+  | Value v => paircount_val v
+  | Application f a => paircount_val f + paircount_val a
+  | Let_Bind nm vl e => paircount_val vl + paircount e
+  | If1 t b1 b2 => paircount_val t + paircount b1 + paircount b2
+  end
+
+with paircount_val (val : value) {struct val} :=
+  match val with
+    | Identifier t vn => 0
+    | Integer _ _ => 0
+    | Fix t f a b => paircount b
+    | Value_Evaluation_Pair t l r => 1 + paircount_val l + paircount_val r
+  end.
+
+Lemma leftbranch1_leftbranch : forall e,
+    left_branch (left_branch_1 e) = left_branch e
+with  leftbranch1_leftbranch_val : forall v,
+    left_branch_val (left_branch_1_val v) = left_branch_val v.
+Proof.
+  Case "expr". clear leftbranch1_leftbranch.
+    induction e;
+        simpl;
+        repeat (rewrite leftbranch1_leftbranch_val);
+        repeat (rewrite IHe);
+        repeat (rewrite IHe1);
+        repeat (rewrite IHe2);
+        reflexivity.
+  Case "val". clear leftbranch1_leftbranch_val.
+    induction v;
+        simpl;
+        try (rewrite leftbranch1_leftbranch);
+        reflexivity.
+Qed.
+
+Lemma paircount_leftbranch : forall e,
+        paircount (left_branch e) = 0
+ with paircount_leftbranch_val : forall v,
+        paircount_val (left_branch_val v) = 0.
+Proof.
+  Case "expr". clear paircount_leftbranch.
+    induction e;
+        simpl;
+        repeat (rewrite paircount_leftbranch_val);
+        repeat (rewrite IHe);
+        repeat (rewrite IHe1);
+        repeat (rewrite IHe2);
+        trivial.
+
+  Case "val". clear paircount_leftbranch_val.
+    induction v;
+        simpl;
+        repeat (rewrite paircount_leftbranch);
+        trivial.
+Qed.
+
+Lemma paircount0_leftbranch : forall e,
+      paircount e = 0 -> left_branch e = e
+with paircount0_leftbranch_val : forall v,
+      paircount_val v = 0 -> left_branch_val v = v.
+Proof.
+  clear paircount0_leftbranch.
+  induction e;
+      intros; simpl in *.
+  Case "value".
+    rewrite paircount0_leftbranch_val. trivial. trivial.
+  Case "application".
+    assert (left_branch_val v = v)
+        by (apply paircount0_leftbranch_val; omega).
+    assert (left_branch_val v0 = v0)
+        by (apply paircount0_leftbranch_val; omega).
+    congruence.
+  Case "let".
+    assert (left_branch_val v0 = v0)
+        by (apply paircount0_leftbranch_val; omega).
+    assert (left_branch e = e)
+        by (apply IHe; omega).
+    congruence.
+  Case "if".
+    assert (left_branch_val v = v)
+        by (apply paircount0_leftbranch_val; omega).
+    assert (left_branch e1 = e1)
+        by (apply IHe1; omega).
+    assert (left_branch e2 = e2)
+        by (apply IHe2; omega).
+    congruence.
+  Case "pair".
+    discriminate.
+
+  clear paircount0_leftbranch_val.
+  induction v;
+      intros; try reflexivity.
+  Case "fix".
+    simpl in *. rewrite paircount0_leftbranch; trivial.
+  Case "pir".
+    discriminate.
+Qed.
+
+Lemma paircount0_leftbranch1 : forall e,
+      paircount e = 0 -> left_branch_1 e = e
+with paircount0_leftbranch1_val : forall v,
+      paircount_val v = 0 -> left_branch_1_val v = v.
+Proof.
+    clear paircount0_leftbranch1.
+    induction e;
+        intros; simpl in *;
+        repeat (rewrite paircount0_leftbranch1_val);
+        repeat (rewrite IHe);
+        repeat (rewrite IHe1);
+        repeat (rewrite IHe2);
+        try solve [ reflexivity | omega ].
+
+    clear paircount0_leftbranch1_val.
+    induction v;
+        intros; simpl in *;
+        repeat (rewrite paircount0_leftbranch1);
+        try solve [ reflexivity | omega ].
+Qed.
+
+Lemma paircount_leftbranch_1 : forall e, paircount e = 0
+        \/ paircount (left_branch_1 e) < paircount e
+ with paircount_leftbranch_1_val : forall v, paircount_val v = 0
+        \/ paircount_val (left_branch_1_val v) < paircount_val v.
+Proof.
+  Case "expr". clear paircount_leftbranch_1.
+    induction e;
+      try (destruct (paircount_leftbranch_1_val v));
+      try (destruct (paircount_leftbranch_1_val v0));
+      try (destruct IHe); try (destruct IHe1); try (destruct IHe2);
+      simpl in *;
+      repeat
+        match goal with
+          | H : paircount?e = 0 |- _ =>
+              let H_left := fresh H "_left" in
+              let H_left1 := fresh H "_left1" in
+              assert (left_branch e = e) as H_left
+                by (apply paircount0_leftbranch; auto);
+              assert (left_branch_1 e = e) as H_left1
+                by (apply paircount0_leftbranch1; auto);
+              repeat (simpl in *;
+                      first [ rewrite H
+                            | rewrite H_left
+                            | rewrite H_left1 ]);
+              simpl in *;
+              clear H; clear H_left; clear H_left1
+          | H : paircount_val ?v = 0 |- _ =>
+              let H_left := fresh H "_left" in
+              let H_left1 := fresh H "_left1" in
+              assert (left_branch_val v = v) as H_left
+                by (apply paircount0_leftbranch_val; auto);
+              assert (left_branch_1_val v = v) as H_left1
+                by (apply paircount0_leftbranch1_val; auto);
+              repeat (simpl in *;
+                      first [ rewrite H
+                            | rewrite H_left
+                            | rewrite H_left1 ]);
+              simpl in *;
+              clear H; clear H_left; clear H_left1
+        end;
+      try solve [ omega ].
+
+  Case "val". clear paircount_leftbranch_1_val.
+    induction v;
+      simpl in *;
+      try (destruct (paircount_leftbranch_1 e));
+      omega.
+Qed.
+
+Lemma pairsize_ind (P : expression -> Prop) :
+    (forall e, paircount e = 0 -> P e) ->
+    (forall e, (forall e', paircount e' < paircount e -> P e') -> P e) ->
+    forall e, P e.
+Proof.
+  intros when0 whenS.
+
+  intro e. remember (paircount e) as n. generalize dependent e.
+
+  pose proof
+      (fun n => lt_wf_ind n (fun n => forall e, n = paircount e -> P e)).
+  specialize (H n). apply H. clear H. clear n.
+
+  intros n H1 e Hsize.
+  destruct n eqn:Hn.
+  Case "n=0". apply when0. auto.
+  Case "n>0".
+    apply whenS. intros e'. rewrite <- Hsize. intro Hsize2.
+    apply H1 with (m := paircount e'); omega.
+Qed.
+
+Lemma lemma_3l_nopair : forall e,
+    (forall a b, e <> Expression_Evaluation_Pair a b) ->
+    (stuck e) -> (stuck (left_branch e)) /\ (stuck (right_branch e)).
+Proof.
+  induction e; intros Hnonpair Hstuck.
+  Case "Value".
+    apply values_not_stuck in Hstuck; contradiction.
+  Case "Application".
+    inversion Hstuck as [Hnf Hnonv]. unfold normal_form in *.
+    destruct v; simpl. (* destructing the rator *)
+    SCase "Identifier".
+      split; split; intro; solve by inversion 2.
+    SCase "Integer".
+      split; split; intro; solve by inversion 2.
+    SCase "Fix".
+      contradict Hnf. eexists. econstructor.
+    SCase "Pair".
+      contradict Hnf. eexists. econstructor.
+  Case "Let".
+    inversion Hstuck as [Hnf Hnonv]. unfold normal_form in *.
+    contradict Hnf. eexists. econstructor.
+  SCase "If".
+    inversion Hstuck as [Hnf Hnonv]. unfold normal_form in *.
+    contradict Hnf.
+    destruct v;
+        try solve [ eexists; econstructor; congruence ].
+    SSCase "conditional was integer".
+      compare n 1; intro; subst;
+          try solve [ eexists; econstructor; congruence ].
+    SSCase "conditional was pair".
+      eexists. eapply Lift_If_R.
+  Case "Expression_Evaluation_Pair".
+    specialize (Hnonpair e1 e2); congruence.
+Qed.
+
+Lemma stuck_or_steps_or_value : forall e,
+  stuck e \/ is_value e \/ exists e', e ==> e'.
+Proof.
+  intros e.
+  destruct (stuck_or_not e) as [H | H];
+      unfold stuck in *; unfold normal_form in *;
+      tauto.
+Qed.
+
+Lemma pair_stuck_parts_stuck : forall e1 e2,
+  (stuck (Expression_Evaluation_Pair e1 e2)) -> stuck e1 \/ stuck e2.
+Proof.
+  intros e1 e2 Hstuck; simpl.
+  inversion_clear Hstuck as [Hnf Hnonval].
+  destruct (stuck_or_steps_or_value e1) as [He1 | [He1 | [e1' He1]]];
+    destruct (stuck_or_steps_or_value e2) as [He2 | [He2 | [e2' He2]]];
+    try solve [
+        tauto (* at least one stuck *)
+      | contradict Hnonval; constructor; trivial (* both values *)
+      | unfold normal_form in Hnf; contradict Hnf;
+        eexists; solve [ eapply Bracket_left_R; eauto
+                       | eapply Bracket_right_R; eauto ]].
+Qed.
+
+Lemma lemma_3l_pair : forall e e1 e2,
+    e = Expression_Evaluation_Pair e1 e2 ->
+    (stuck e) -> (stuck (left_branch_1 e)) \/ (stuck (right_branch_1 e)).
+Proof.
+  intros. subst. simpl. apply pair_stuck_parts_stuck. assumption.
+Qed.
+
+Definition lemma_3_stmt := forall e, (stuck e) -> (stuck (left_branch e))  \/ (stuck (right_branch e)).
+
+Lemma lemma_3l_false : ~ lemma_3_stmt.
+Proof.
+  pose (Integer (Int_t High_Label) 4) as four.
+  pose (Value four) as valu.
+  pose (Application four four) as stk.
+  pose (Expression_Evaluation_Pair
+        (Expression_Evaluation_Pair valu valu)
+        (Expression_Evaluation_Pair stk valu))  as nasty.
+
+  assert (stuck nasty) as Hstuck.
+    split.
+      intro Hsteps; inversion Hsteps; solve by inversion 3.
+      intro Hisval; inversion Hisval; solve by inversion 2.
+
+  intros lemma3.
+  destruct (lemma3 nasty Hstuck) as [H | H];
+      simpl in H; apply values_not_stuck in H; contradiction.
+Qed.
 
 Lemma lemma_3 : forall e, (stuck e) -> (stuck (left_branch e))  \/ (stuck (right_branch e)).
 Proof.
-  induction e;
-    try solve [ apply lemma_3_micro; try congruence ].
+  apply (pairsize_ind
+    (fun e => stuck e -> stuck (left_branch e) \/ stuck (right_branch e))).
+  Case "size 0".
+    intros e Hpaircount Hstuck.
+    rewrite paircount0_leftbranch; auto.
+  Case "size > 0".
+    intros e IHfewerpairs Hstuck.
+    destruct e;
+      try solve [ left;
+                  apply lemma_3l_nopair;
+                  intros; solve [ congruence | trivial ] ].
+    SCase "Pair".
+      apply pair_stuck_parts_stuck in Hstuck.
+      inversion_clear Hstuck as [He1_stuck | He2_stuck]; [left | right].
+      simpl in *.
+
+      destruct e1;
+        try solve [ apply lemma_3l_nopair; intros;
+                    solve [ congruence |  trivial ]].
+        apply pair_stuck_parts_stuck in He1_stuck.
+        inversion_clear He1_stuck as [He11_stuck | He12_stuck].
+        simpl in *.
+        destruct e1_1;
+          try solve [ apply lemma_3l_nopair; intros;
+                      solve [ congruence |  trivial ]].
+        apply pair_stuck_parts_stuck in He11_stuck.
+        inversion_clear He11_stuck as [He111_stuck | He122_stuck].
+        simpl in *.
+
+admit.
+simpl.
+
+
+
+      assert (paircount e1 < S (paircount e1 + paircount e2)) as tmp1
+          by omega.
+      pose proof (IHfewerpairs e1 tmp1 He1_stuck).
+      pose proof (lemma_3l_nopair e1).
+
+      inversion_clear Hstuck as [Hnf Hval].
+      destruct (stuck_or_not e1) as [He1 | He1];
+        destruct (stuck_or_not e2) as [He2 | He2].
+      SSCase "both stuck".
+        destruct e1.
+        try solve [ apply lemma_3l_micro;
+                    intros; solve [ congruence | trivial ] ].
+        admit.
+      SSCase "e2 not stuck".
+        apply not_and_or in He2.
+        inversion_clear He2 as [He2_steps | He2_val].
+        SSSCase "e2 steps".
+          apply NNPP in He2_steps.
+          inversion_clear He2_steps as [e2' He2'].
+          unfold normal_form in Hnf. contradict Hnf.
+          eexists. eapply Bracket_right_R. eassumption.
+        SSSCase "e2 value".
+      apply not_and_or in He1.
+      apply not_and_or in He2.
+      inversion_clear He1 as [He1_steps | He1_val];
+          repeat (match goal with
+                    | H : _ |- _ => apply NNPP in H
+                  end).
+      SCase "both step".
+        unfold normal_form in Hnf. contradict Hnf.
+        inversion_clear He1_steps as [e1' He1'].
+        eexists. eapply Bracket_left_R. eassumption.
+      SCase "e1 steps, e2 value".
+        unfold normal_form in Hnf. contradict Hnf.
+        inversion_clear He1_steps as [e1' He1'].
+        eexists. eapply Bracket_left_R. eassumption.
+      SCase "e1 value, e2 steps".
+      SCase "both values".
+        contradict Hval. constructor; trivial.
+      Qed.
+ 
+; contradict Hnf. econstructor. econstructor.
+
+  apply lemma_3_micro.
+
   Case "E_E_P".
+  try solve [ apply lemma_3_micro; try congruence ].
     intro Hstuck; inversion Hstuck as [Hnormal Hnonvalu].
 Admitted.
+
+
+
 
 (*
     destruct (stuck_or_not e1); destruct (stuck_or_not e2).
