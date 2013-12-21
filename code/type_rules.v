@@ -194,7 +194,7 @@ match e with
     | None => None
     end
   end
-| (Expression_Evaluation_Pair e1 e2) => 
+| (Expression_Evaluation_Pair e1 e2) =>
   match (type_of_expression High_Label gamma e1) with
   | Some t1 => match (type_of_expression High_Label gamma e2) with
                | Some t2 =>
@@ -202,7 +202,7 @@ match e with
                  if subtype_of t1 t2 d
                  then if guardsb High_Label t2
                       then Some t2
-                      else None 
+                      else None
                  else if subtype_of t2 t1 d
                       then if guardsb High_Label t1
                            then Some t1

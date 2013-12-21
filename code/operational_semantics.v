@@ -7,26 +7,26 @@ Inductive environment : Set :=
 | Empty_Env : environment
 | Env : (variable_name * value) -> environment -> environment.
 
-Fixpoint extract_num (var : variable_name) : nat := 
+Fixpoint extract_num (var : variable_name) : nat :=
   match var with
     | Var n => n
   end.
 
-Fixpoint names_equal (n1 : variable_name) (n2 : variable_name) : bool := 
+Fixpoint names_equal (n1 : variable_name) (n2 : variable_name) : bool :=
   match n1 with
       | Var m1 => (match n2 with | Var m2 => (beq_nat m1 m2) end)
   end.
 
 (* better plan: no indirection permitted.  env only ever identifier-values to non-identifier values.*)
-Fixpoint find_in_env (key : variable_name) (env : environment) : (option value) := 
-  match env with 
+Fixpoint find_in_env (key : variable_name) (env : environment) : (option value) :=
+  match env with
     | Empty_Env => None
-    | Env (vname, val) rst => 
+    | Env (vname, val) rst =>
       if (names_equal key vname) then Some val
       else find_in_env key rst
   end.
 
-Fixpoint reduce_identifier (id : value) (env : environment) : value := 
+Fixpoint reduce_identifier (id : value) (env : environment) : value :=
   match id with
     | Identifier t v => (match (find_in_env v env) with
                            | Some v => v
@@ -36,13 +36,13 @@ Fixpoint reduce_identifier (id : value) (env : environment) : value :=
   end.
 
 Fixpoint env_cons (id : variable_name) (bind : value) (env : environment) : environment :=
-  match id with 
+  match id with
       | Var v => Env (id, (reduce_identifier bind env)) env
   end.
 
 
-Function right_branch (expr : expression) {struct expr} := 
-  match expr with 
+Function right_branch (expr : expression) {struct expr} :=
+  match expr with
     | Expression_Evaluation_Pair l r => (right_branch r)
     | Value v => Value (right_branch_val v)
     | Application f a => Application (right_branch_val f) (right_branch_val a)
@@ -51,15 +51,15 @@ Function right_branch (expr : expression) {struct expr} :=
   end
 
 with right_branch_val (val : value) {struct val} :=
-  match val with 
+  match val with
     | Identifier t vn => val
     | Integer _ _ => val
     | Fix t f a b => Fix t f a (right_branch b)
     | Value_Evaluation_Pair t l r => (right_branch_val r)
   end.
 
-Function left_branch (expr : expression) {struct expr} := 
-  match expr with 
+Function left_branch (expr : expression) {struct expr} :=
+  match expr with
     | Expression_Evaluation_Pair l r => (left_branch l)
     | Value v => Value (left_branch_val v)
     | Application f a => Application (left_branch_val f) (left_branch_val a)
@@ -68,15 +68,15 @@ Function left_branch (expr : expression) {struct expr} :=
   end
 
 with left_branch_val (val : value) {struct val} :=
-  match val with 
+  match val with
     | Identifier t vn => val
     | Integer _ _ => val
     | Fix t f a b => Fix t f a (left_branch b)
     | Value_Evaluation_Pair t l r => (left_branch_val l)
   end.
 
-Fixpoint get_type (val : value) : type := 
-  match val with 
+Fixpoint get_type (val : value) : type :=
+  match val with
     | Identifier t _ => t
     | Integer t _ => t
     | Fix t f a b => t
@@ -86,7 +86,7 @@ Fixpoint get_type (val : value) : type :=
 Function subst_values (var : variable_name) (bind : value) (val : value): value :=
   match val with
     | Identifier _ nm => if (names_equal nm var) then bind else val
-    | Fix t f a b => if (names_equal f var) then val else 
+    | Fix t f a b => if (names_equal f var) then val else
                        if (names_equal a var) then val else
                          Fix t f a (subst var bind b)
     | Value_Evaluation_Pair t v1 v2 => Value_Evaluation_Pair t (subst_values var bind v1)
@@ -94,13 +94,13 @@ Function subst_values (var : variable_name) (bind : value) (val : value): value 
     | _ => val
   end
 
-with subst (var : variable_name) (bind : value) (expr : expression) : expression := 
-  let subst_values := (fun val => subst_values var bind val) in 
-  let subst := (fun val => subst var bind val) in 
+with subst (var : variable_name) (bind : value) (expr : expression) : expression :=
+  let subst_values := (fun val => subst_values var bind val) in
+  let subst := (fun val => subst var bind val) in
   match expr with
     | Value v => Value (subst_values v)
     | Application f a => Application (subst_values f) (subst_values a)
-    | Let_Bind name val expr => 
+    | Let_Bind name val expr =>
       let new_val := (subst_values val) in
       let new_expr := if (names_equal name var) then expr else (subst expr) in
       Let_Bind name new_val new_expr
@@ -109,111 +109,111 @@ with subst (var : variable_name) (bind : value) (expr : expression) : expression
   end.
 
 (* big-step semantics of the language *)
-(* since our non-interference proof is of the form 
+(* since our non-interference proof is of the form
 "Iff computation terminates with a low type, it terminates with a single value"
 We don't actually have to prove any properties of step_bound in the reduction rules
 (we allow divergence) *)
 
-Fixpoint reduction_rules (expr : expression) (recursion_bound : nat) (step_bound : nat) : (option value) := 
-  match step_bound with 
-    | S sb => 
-      (match expr with 
-         | Value v => (match v with 
+Fixpoint reduction_rules (expr : expression) (recursion_bound : nat) (step_bound : nat) : (option value) :=
+  match step_bound with
+    | S sb =>
+      (match expr with
+         | Value v => (match v with
                            | Identifier t nm => None (* unbound identifier *)
                            | _ => Some v
                        end)
-         | Application f a => 
+         | Application f a =>
            (match f with
-              | Value_Evaluation_Pair t l r => 
-                let new_expr := (Expression_Evaluation_Pair 
-                                   (Application l (left_branch_val a)) 
+              | Value_Evaluation_Pair t l r =>
+                let new_expr := (Expression_Evaluation_Pair
+                                   (Application l (left_branch_val a))
                                    (Application r (right_branch_val a))) in
                 reduction_rules new_expr recursion_bound sb
-              | Fix type fname argname fexpr => 
-                let bind_fun_expr := (subst 
-                                         argname a (subst fname f fexpr)) in 
-                (match recursion_bound with 
+              | Fix type fname argname fexpr =>
+                let bind_fun_expr := (subst
+                                         argname a (subst fname f fexpr)) in
+                (match recursion_bound with
                    | 0 => None (* failed, bottom-out *)
                    | S n => reduction_rules bind_fun_expr n sb
                  end)
               | _ => None
             end)
          | Let_Bind lname lvalue lexpr => reduction_rules (subst lname lvalue lexpr) recursion_bound sb
-         | If1 test thendo elsedo => 
+         | If1 test thendo elsedo =>
            (match test with
-              | Integer t val => if beq_nat val 1 then reduction_rules thendo recursion_bound sb 
+              | Integer t val => if beq_nat val 1 then reduction_rules thendo recursion_bound sb
                                  else reduction_rules elsedo recursion_bound sb
-              | Value_Evaluation_Pair t l r=> 
-                let new_expr := (Expression_Evaluation_Pair (If1 l (left_branch thendo) (left_branch elsedo)) 
+              | Value_Evaluation_Pair t l r=>
+                let new_expr := (Expression_Evaluation_Pair (If1 l (left_branch thendo) (left_branch elsedo))
                                                             (If1 r (right_branch thendo) (right_branch elsedo))) in
                 reduction_rules new_expr recursion_bound sb
               | _ => reduction_rules elsedo recursion_bound sb
             end
-           ) 
-         | Expression_Evaluation_Pair l r => 
+           )
+         | Expression_Evaluation_Pair l r =>
            let new_left := (reduction_rules l recursion_bound sb) in
            let new_right := (reduction_rules r recursion_bound sb) in
            (match new_left with
               | None => None
-              | Some nl => (match new_right with 
+              | Some nl => (match new_right with
                               | None => None
-                              | Some nr => 
+                              | Some nr =>
                                 let t := (get_type nl) in
                                 Some (Value_Evaluation_Pair t nl nr)
                             end)
             end)
-                                                                   
+
        end )
     | 0 => None (* we will prove that this case never fires *)
   end.
 
 
 Fixpoint reduction_rules_env (env : environment) (expr : expression) (recursion_bound : nat) (step_bound : nat) : (option value) :=
-  match step_bound with 
-    | S sb => 
-      (match expr with 
+  match step_bound with
+    | S sb =>
+      (match expr with
          | Value v => Some (reduce_identifier v env)
-         | Application f a => 
+         | Application f a =>
            (match (reduce_identifier f env) with
-              | Value_Evaluation_Pair t l r => 
-                let new_expr := (Expression_Evaluation_Pair 
-                                   (Application l (left_branch_val a)) 
+              | Value_Evaluation_Pair t l r =>
+                let new_expr := (Expression_Evaluation_Pair
+                                   (Application l (left_branch_val a))
                                    (Application r (right_branch_val a))) in
                 reduction_rules_env env new_expr recursion_bound sb
-              | Fix type fname argname fexpr => 
-                let new_env := (env_cons fname f 
+              | Fix type fname argname fexpr =>
+                let new_env := (env_cons fname f
                                          (env_cons argname a env)) in
-                (match recursion_bound with 
+                (match recursion_bound with
                    | 0 => None (* failed, bottom-out *)
                    | S n => reduction_rules_env new_env fexpr n sb
                  end)
               | _ => None
             end)
          | Let_Bind lname lvalue lexpr => reduction_rules_env (env_cons lname lvalue env) lexpr recursion_bound sb
-         | If1 test thendo elsedo => 
+         | If1 test thendo elsedo =>
            (match (reduce_identifier test env) with
-              | Integer t val => if beq_nat val 1 then reduction_rules_env env thendo recursion_bound sb 
+              | Integer t val => if beq_nat val 1 then reduction_rules_env env thendo recursion_bound sb
                                  else reduction_rules_env env elsedo recursion_bound sb
-              | Value_Evaluation_Pair t l r=> 
-                let new_expr := (Expression_Evaluation_Pair (If1 l (left_branch thendo) (left_branch elsedo)) 
+              | Value_Evaluation_Pair t l r=>
+                let new_expr := (Expression_Evaluation_Pair (If1 l (left_branch thendo) (left_branch elsedo))
                                                             (If1 r (right_branch thendo) (right_branch elsedo))) in
                 reduction_rules_env env new_expr recursion_bound sb
               | _ => reduction_rules_env env elsedo recursion_bound sb
             end
-           ) 
-         | Expression_Evaluation_Pair l r => 
+           )
+         | Expression_Evaluation_Pair l r =>
            let new_left := (reduction_rules_env env l recursion_bound sb) in
            let new_right := (reduction_rules_env env r recursion_bound sb) in
            (match new_left with
               | None => None
-              | Some nl => (match new_right with 
+              | Some nl => (match new_right with
                               | None => None
-                              | Some nr => 
+                              | Some nr =>
                                 let t := (get_type nl) in
                                 Some (Value_Evaluation_Pair t nl nr)
                             end)
             end)
-                                                                   
+
        end )
     | 0 => None (* we will prove that this case never fires *)
   end.
@@ -233,19 +233,19 @@ Inductive step : expression -> expression -> Prop :=
             (Let_Bind x v e) ==> (subst x v e)
 | Lift_App_R : forall t v1 v2 v,
                  (Application (Value_Evaluation_Pair t v1 v2) v)
-                   ==> 
+                   ==>
                    (Expression_Evaluation_Pair (Application v1 (left_branch_val v)) (Application v1 (right_branch_val v)))
 | Lift_If_R : forall t vl vr e1 e2,
-                  (If1 (Value_Evaluation_Pair t vl vr) e1 e2) 
-                    ==> 
-                    (Expression_Evaluation_Pair 
+                  (If1 (Value_Evaluation_Pair t vl vr) e1 e2)
+                    ==>
+                    (Expression_Evaluation_Pair
                        (If1 vl (left_branch e1) (left_branch e2))
                        (If1 vr (right_branch e1) (right_branch e2)))
 | Bracket_left_R : forall e1 e2 e1',
-                e1 ==> e1' -> 
+                e1 ==> e1' ->
                 Expression_Evaluation_Pair e1 e2 ==> Expression_Evaluation_Pair e1' e2
 | Bracket_right_R : forall e1 e2 e2',
-                e2 ==> e2' -> 
+                e2 ==> e2' ->
                 Expression_Evaluation_Pair e1 e2 ==> Expression_Evaluation_Pair e1 e2'
   where " t '==>' t' " := (step t t').
 
@@ -257,31 +257,31 @@ Proof.
   intros.
   eapply multi_step. eassumption. econstructor.
 Qed.
-  
-(*  Lemma step_many_and_difference_implies_step : 
+
+(*  Lemma step_many_and_difference_implies_step :
     forall t t', (not (t = t')) -> t ==>* t' -> exists mid, t ==>* mid -> mid ==> t'.
     Proof.
-      intros. exists t. intros. induction H0. contradict H; reflexivity. 
+      intros. exists t. intros. induction H0. contradict H; reflexivity.
 *)
-      
-    
-    
-Lemma leftbranch_beta_comm : forall var bound expr, 
+
+
+
+Lemma leftbranch_beta_comm : forall var bound expr,
          left_branch (subst var bound expr) = subst var (left_branch_val bound) (left_branch expr)
 with leftbranch_beta_comm_val : forall var bound val,
-         left_branch_val (subst_values var bound val) = 
+         left_branch_val (subst_values var bound val) =
          subst_values var (left_branch_val bound) (left_branch_val val).
 Proof.
   Case "expr". clear leftbranch_beta_comm.
   intros.
   induction expr; try (simpl; f_equal; auto).
-   SCase "Let". destruct (names_equal v var); trivial.   
+   SCase "Let". destruct (names_equal v var); trivial.
 
   Case "values". clear leftbranch_beta_comm_val.
   intros. induction val; try solve [ simpl; f_equal; auto ].
    SCase "Identifier". simpl; destruct (names_equal v var); trivial.
-   SCase "Fixpoint". 
-     simpl. destruct (names_equal v var); destruct (names_equal v0 var); 
+   SCase "Fixpoint".
+     simpl. destruct (names_equal v var); destruct (names_equal v0 var);
             try trivial; try (simpl; f_equal; trivial). Qed.
 
 
@@ -293,18 +293,18 @@ Lemma left_branch_idem : forall e, (left_branch (left_branch e)) = (left_branch 
     repeat first [ rewrite left_branch_val_idem | rewrite IHe | rewrite IHe1 | rewrite IHe2 ]; trivial.
 
   Case "values". clear left_branch_val_idem.
-  induction v; simpl; try (rewrite left_branch_idem); auto.  
+  induction v; simpl; try (rewrite left_branch_idem); auto.
 Qed.
-  
-Lemma left_branch_still_unequal: forall t v, t <> v -> 
+
+Lemma left_branch_still_unequal: forall t v, t <> v ->
                          (forall typ f x e, t <> Fix typ f x e) ->
-                         (forall a b c, t <> (Value_Evaluation_Pair a b c)) -> 
+                         (forall a b c, t <> (Value_Evaluation_Pair a b c)) ->
                          left_branch_val t <> v.
-  Proof. 
+  Proof.
      Case "proving assertion". intros. induction t; try (simpl; assumption). pose proof (H0 t v0 v1 e) as hwrong. contradict hwrong; reflexivity. pose proof (H1 t1 t2 t3) as hwrong. contradict hwrong; reflexivity.  Qed.
 
-Lemma left_branch_still_not_integer: forall t typ i, t <> (Integer typ i) -> 
-                                                     (forall a b c, t <> (Value_Evaluation_Pair a b c)) -> 
+Lemma left_branch_still_not_integer: forall t typ i, t <> (Integer typ i) ->
+                                                     (forall a b c, t <> (Value_Evaluation_Pair a b c)) ->
                                                      left_branch_val t <>  (Integer typ i).
 Proof.
   intros.
@@ -318,7 +318,7 @@ Proof.
   intros.
   destruct t; simpl; intros; congruence.
 Qed.
-   
+
 
 Lemma lemma_2_l:  forall e e1, e ==> e1 -> (left_branch e) ==>* (left_branch e1).
 Proof.
@@ -330,20 +330,20 @@ Proof.
   Case "Value".
     intros e1 Hreduces. inversion Hreduces.
   Case "Application".
-    intros e1 Hreduces.    
+    intros e1 Hreduces.
     inversion Hreduces; subst.
     SCase "Beta_Reduction_R".
       rewrite leftbranch_beta_comm.
-      rewrite leftbranch_beta_comm. simpl. 
-      pose proof (Beta_Reduction_R t f0 x (left_branch e) (left_branch_val a)) as BR. 
+      rewrite leftbranch_beta_comm. simpl.
+      pose proof (Beta_Reduction_R t f0 x (left_branch e) (left_branch_val a)) as BR.
       apply step_implies_stepmany in BR. apply BR.
     SCase "Lift_App_R".
       simpl.
       rewrite left_branch_val_idem.  econstructor.
   Case "Let_Bind".
-    intros e1 Hreduces. 
+    intros e1 Hreduces.
     inversion Hreduces; subst.
-    SCase "let". 
+    SCase "let".
      pose proof (Let_R nm (left_branch_val vl) (left_branch e)) as LR.
      apply step_implies_stepmany in LR. rewrite leftbranch_beta_comm. assumption.
   Case "If1".
@@ -354,9 +354,9 @@ Proof.
     simpl.
     pose proof (Ifelse_R (left_branch_val t) (left_branch b1) (left_branch e1)) as IfR.
     apply step_implies_stepmany.
-    apply IfR. 
+    apply IfR.
     intros. pose proof (H3 t0) as newH3. apply (left_branch_still_not_integer t t0 1) in newH3. assumption.
-    assumption. 
+    assumption.
     intros. apply left_branch_still_not_pair. assumption.
     SCase "lift".
     simpl. rewrite left_branch_idem. rewrite left_branch_idem. constructor. Qed.
@@ -383,26 +383,26 @@ Lemma lemma_3_micro : forall e,
                         (stuck e) -> (stuck (left_branch e))  \/ (stuck (right_branch e)).
   Proof.
     intros e Hnotpair H.
-    intros. destruct e. 
+    intros. destruct e.
     Case "value".
-      unfold stuck in H. inversion  H. contradict H1. constructor. 
+      unfold stuck in H. inversion  H. contradict H1. constructor.
     Case "Application".
-      unfold stuck in H. inversion H. unfold normal_form in H0. 
+      unfold stuck in H. inversion H. unfold normal_form in H0.
       destruct v;
         try solve [ simpl; left; unfold stuck; split;
                     [ intro contra; solve by inversion 2
                     | intro contra; solve by inversion ] ];
             contradict H0; repeat econstructor.
     Case "Let_Bind". unfold stuck in H. inversion H. unfold normal_form in H0. contradict H0.
-     econstructor. econstructor. 
-    Case "If". unfold stuck in H. inversion H. unfold normal_form in H0. contradict H0. 
+     econstructor. econstructor.
+    Case "If". unfold stuck in H. inversion H. unfold normal_form in H0. contradict H0.
      destruct v;
         try solve [econstructor; apply Ifelse_R; intros; discriminate].
       SCase "Integer". compare n 1; intro Hn1; subst.
         SSCase "true". econstructor. apply If1_R.
         SSCase "false". econstructor. apply Ifelse_R. intros. congruence. intros; congruence.
-      SCase "Value_Evaluation_Pair". econstructor. apply Lift_If_R. 
-    Case "Expression_Evaluation_Pair". 
+      SCase "Value_Evaluation_Pair". econstructor. apply Lift_If_R.
+    Case "Expression_Evaluation_Pair".
       specialize (Hnotpair e1 e2). congruence.
 Qed.
 
@@ -432,15 +432,15 @@ Admitted.
       eexists.
       apply Classical_Prop.not_and_or in H0.
 
-      
+
       contradict H0. contradict H0.
 
       inversion H0.
       unfold normal_form in H1.
       apply Classical_Prop.NNPP in H1.
-      inversion 
+      inversion
 
-        unfold stuck in H3. 
+        unfold stuck in H3.
 apply Classical_Prop.not_and_or in H3.
 inversion H3.
 unfold normal_form in H4.
@@ -453,24 +453,24 @@ left.
 unfold normal_form. intro blah; contradict blah.
 inversion H5; subst. rewrite <- H6 in *.
 destruct e1; try solve [ simpl in *; congruence ].
-  (* foo *) simpl in *. 
+  (* foo *) simpl in *.
 simpl in H6. inversion H6. subst.
 
 
 
-econstructor. econstructor. 
+econstructor. econstructor.
 
 
-left. 
+left.
 
-unfold normal_form. intro blah; contradict blah. 
+unfold normal_form. intro blah; contradict blah.
 
 
-contradict 
+contradict
 
      pose proof (lemma_3_micro (left_branch e1)).
 
-      
+
 
     unfold stuck
 
@@ -479,12 +479,12 @@ contradict
 
 
   apply lemma_3_micro; try congruence.
-  
 
 
 
 
-simpl. unfold stuck in H. inversion H. 
+
+simpl. unfold stuck in H. inversion H.
       unfold normal_form in H0.
       destruct (stuck_or_not e1).
       SCase "e1 stuck". apply IHe1 in H2. tauto.
