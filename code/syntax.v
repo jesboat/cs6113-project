@@ -40,6 +40,133 @@ with expression : Set :=
   | Expression_Evaluation_Pair : expression -> expression -> expression.
 
 
+Function bpairfree_v (v : value) : bool :=
+  match v with
+  | Identifier _ _ => true
+  | Integer _ _ => true
+  | Fix _ _ _ e => bpairfree_e e
+  | Value_Evaluation_Pair _ _ _ => false
+  end
+
+with bpairfree_e (e : expression) : bool :=
+  match e with
+  | Value v => bpairfree_v v
+  | Application v1 v2 => bpairfree_v v1 && bpairfree_v v2
+  | Let_Bind _ v e =>
+      bpairfree_v v && bpairfree_e e
+  | If1 v e1 e2 =>
+      bpairfree_v v && bpairfree_e e1 && bpairfree_e e2
+  | Expression_Evaluation_Pair _ _ => false
+  end.
+
+Function bwff_v (v : value) : bool :=
+  match v with
+  | Identifier _ _ => true
+  | Integer _ _ => true
+  | Fix _ _ _ e => bwff_e e
+  | Value_Evaluation_Pair ty v1 v2 => bpairfree_v v1 && bpairfree_v v2
+  end
+
+with bwff_e (e : expression) : bool :=
+  match e with
+  | Value v => bwff_v v
+  | Application v1 v2 => bwff_v v1 && bwff_v v2
+  | Let_Bind _ v e => bwff_v v && bwff_e e
+  | If1 v e1 e2 => bwff_v v && bwff_e e1 && bwff_e e2
+  | Expression_Evaluation_Pair e1 e2 => bpairfree_e e1 && bpairfree_e e2
+  end.
+
+Function pairfree_v (v : value) : Prop :=
+  match v with
+  | Identifier _ _ => True
+  | Integer _ _ => True
+  | Fix _ _ _ e => pairfree_e e
+  | Value_Evaluation_Pair _ _ _ => False
+  end
+
+with pairfree_e (e : expression) : Prop :=
+  match e with
+  | Value v => pairfree_v v
+  | Application v1 v2 => pairfree_v v1 /\ pairfree_v v2
+  | Let_Bind _ v e =>
+      pairfree_v v /\ pairfree_e e
+  | If1 v e1 e2 =>
+      pairfree_v v /\ pairfree_e e1 /\ pairfree_e e2
+  | Expression_Evaluation_Pair _ _ => False
+  end.
+
+Function wff_v (v : value) : Prop :=
+  match v with
+  | Identifier _ _ => True
+  | Integer _ _ => True
+  | Fix _ _ _ e => wff_e e
+  | Value_Evaluation_Pair ty v1 v2 => pairfree_v v1 /\ pairfree_v v2
+  end
+
+with wff_e (e : expression) : Prop :=
+  match e with
+  | Value v => wff_v v
+  | Application v1 v2 => wff_v v1 /\ wff_v v2
+  | Let_Bind _ v e => wff_v v /\ wff_e e
+  | If1 v e1 e2 => wff_v v /\ wff_e e1 /\ wff_e e2
+  | Expression_Evaluation_Pair e1 e2 => pairfree_e e1 /\ pairfree_e e2
+  end.
+
+Theorem pairfree_bpairfree_v : forall v, pairfree_v v <-> bpairfree_v v = true
+   with pairfree_bpairfree_e : forall e, pairfree_e e <-> bpairfree_e e = true.
+Proof.
+  Case "v". clear pairfree_bpairfree_v.
+    induction v; intros; simpl in *; firstorder.
+    SCase "Pair". discriminate.
+
+  Case "e". clear pairfree_bpairfree_e.
+    induction e; intros; simpl in *;
+        repeat (rewrite andb_true_iff);
+        firstorder.
+    SCase "pair". discriminate.
+Qed.
+
+Theorem wff_bwff_v : forall v, wff_v v <-> bwff_v v = true
+   with wff_bwff_e : forall e, wff_e e <-> bwff_e e = true.
+Proof.
+  Case "v". clear wff_bwff_v.
+    pose proof pairfree_bpairfree_v.
+    induction v; intros; simpl in *;
+        repeat (rewrite andb_true_iff);
+        firstorder.
+
+  Case "e". clear wff_bwff_e.
+    pose proof pairfree_bpairfree_e.
+    induction e; intros; simpl in *;
+        repeat (rewrite andb_true_iff);
+        firstorder.
+Qed.
+
+Lemma pairfree_wff_v : forall v, pairfree_v v -> wff_v v
+with  pairfree_wff_e : forall e, pairfree_e e -> wff_e e.
+Proof.
+  Case "v". clear pairfree_wff_v.
+    induction v; firstorder.
+
+  Case "e". clear pairfree_wff_e.
+    induction e; firstorder.
+Qed.
+
+
+Definition wvalue : Set := { v : value | wff_v v }.
+
+Definition wexpression : Set := { e : expression | wff_e e }.
+
+Definition mkwff_v (v : value) {prf : bwff_v v = true} : wvalue.
+Proof.
+  refine (exist wff_v v _). apply wff_bwff_v; trivial.
+Defined.
+
+Definition mkwff_e (e : expression) {prf : bwff_e e = true} : wexpression.
+Proof.
+  refine (exist wff_e e _). apply wff_bwff_e; trivial.
+Defined.
+
 
 Function left_branch (expr : expression) :=
   match expr with
