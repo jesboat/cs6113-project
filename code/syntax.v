@@ -289,6 +289,14 @@ Fixpoint get_type (val : value) : type :=
     | Value_Evaluation_Pair t l r => t
   end.
 
+(* TODO: figure out `Warning: Cannot define graph(s) for subst_values, subst`
+
+Specifically, it seems to happen only when the two Functions are
+defined simultaneously. If we define them separately, parameterized
+over each other, as below, everything works fine.
+
+*)
+
 Function subst_values (var : variable_name) (bind : value) (val : value): value :=
   match val with
     | Identifier _ nm => if (names_equal nm var) then bind else val
@@ -297,21 +305,98 @@ Function subst_values (var : variable_name) (bind : value) (val : value): value 
                          Fix t f a (subst var bind b)
     | Value_Evaluation_Pair t v1 v2 => Value_Evaluation_Pair t (subst_values var bind v1)
                                                              (subst_values var bind v2)
-    | _ => val
+    | Integer _ _ => val
   end
 
 with subst (var : variable_name) (bind : value) (expr : expression) : expression :=
-  let subst_values := (fun val => subst_values var bind val) in
-  let subst := (fun val => subst var bind val) in
   match expr with
-    | Value v => Value (subst_values v)
-    | Application f a => Application (subst_values f) (subst_values a)
-    | Let_Bind name val expr =>
-      let new_val := (subst_values val) in
-      let new_expr := if (names_equal name var) then expr else (subst expr) in
-      Let_Bind name new_val new_expr
-    | If1 t th el => If1 (subst_values t) (subst th) (subst el)
-    | Expression_Evaluation_Pair l r => Expression_Evaluation_Pair (subst l) (subst r)
+    | Value v
+        => Value (subst_values var bind v)
+    | Application f a
+        => Application (subst_values var bind f) (subst_values var bind a)
+    | Let_Bind name val expr
+        => Let_Bind name (subst_values var bind val)
+                (if names_equal name var
+                 then expr
+                 else subst var bind expr)
+    | If1 t th el
+        => If1 (subst_values var bind t)
+               (subst var bind th)
+               (subst var bind el)
+    | Expression_Evaluation_Pair l r
+        => Expression_Evaluation_Pair (subst var bind l)
+                                      (subst var bind r)
   end.
 
+Function wubst_values0
+        (wubst : variable_name -> value -> expression -> expression)
+        (var : variable_name) (bind : value) (val : value): value :=
+  match val with
+    | Identifier _ nm => if (names_equal nm var) then bind else val
+    | Fix t f a b => if (names_equal f var) then val else
+                       if (names_equal a var) then val else
+                         Fix t f a (wubst var bind b)
+    | Value_Evaluation_Pair t v1 v2 => Value_Evaluation_Pair t (wubst_values0 wubst var bind v1)
+                                                             (wubst_values0 wubst var bind v2)
+    | Integer _ _ => val
+  end.
+
+Function wubst0
+        (wubst_values : variable_name -> value -> value -> value)
+        (var : variable_name) (bind : value) (expr : expression) : expression :=
+  match expr with
+    | Value v
+        => Value (wubst_values var bind v)
+    | Application f a
+        => Application (wubst_values var bind f) (wubst_values var bind a)
+    | Let_Bind name val expr
+        => Let_Bind name (wubst_values var bind val)
+                (if names_equal name var
+                 then expr
+                 else wubst0 wubst_values var bind expr)
+    | If1 t th el
+        => If1 (wubst_values var bind t)
+               (wubst0 wubst_values var bind th)
+               (wubst0 wubst_values var bind el)
+    | Expression_Evaluation_Pair l r
+        => Expression_Evaluation_Pair (wubst0 wubst_values var bind l)
+                                      (wubst0 wubst_values var bind r)
+  end.
+
+Definition wubst_values := wubst_values0 subst.
+Definition wubst := wubst0 subst_values.
+
+Theorem wubst_values_ok : forall i b v, subst_values i b v = wubst_values i b v
+    with wubst_ok : forall i b e, subst i b e = wubst i b e.
+Proof.
+    Case "v". clear wubst_values_ok.
+        unfold wubst_values in *. unfold wubst in *.
+        induction v; try solve [ reflexivity
+                               | simpl; rewrite_everything; reflexivity ].
+    Case "e". clear wubst_ok.
+        unfold wubst_values in *. unfold wubst in *.
+        induction e; try solve [ reflexivity
+                               | simpl; rewrite_everything; reflexivity ].
+Qed.
+
+Theorem wubst_eq : forall i b e, wubst i b e = wubst0 wubst_values i b e.
+Proof.
+    intros.
+    pose proof wubst_values_ok as H. (* not sure why necessary *)
+    induction e;
+        simpl; unfold wubst; simpl; fold wubst; (* do recursion *)
+        repeat first [ rewrite IHe | rewrite IHe1 | rewrite IHe2 ];
+        repeat (rewrite H);
+        reflexivity.
+Defined.
+
+Theorem wubst_values_eq : forall i b v, wubst_values i b v = wubst_values0 wubst i b v.
+Proof.
+    intros.
+    induction v;
+        simpl; unfold wubst_values; simpl; fold wubst_values;
+        repeat first [ rewrite IHv | rewrite IHv1 | rewrite IHv2 ];
+        repeat (rewrite wubst_ok);
+        reflexivity.
+Defined.
 
