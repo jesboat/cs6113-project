@@ -168,6 +168,57 @@ Proof.
 Defined.
 
 
+Definition ebranch_picker_t : Set :=
+    forall e e1 e2, e = Expression_Evaluation_Pair e1 e2
+            -> {x : expression | x = e1 \/ x = e2}.
+
+Definition vbranch_picker_t : Set :=
+    forall v ty v1 v2, v = Value_Evaluation_Pair ty v1 v2
+            -> {x : value | x = v1 \/ x = v2}.
+
+Inductive which_branch : ebranch_picker_t -> vbranch_picker_t -> Set :=
+  | pick_left : which_branch
+            (fun e e1 e2 prf => exist (fun x => x = e1 \/ x = e2)
+                                      e1 (or_introl eq_refl))
+            (fun v ty v1 v2 prf => exist (fun x => x = v1 \/ x = v2)
+                                      v1 (or_introl eq_refl))
+  | pick_right : which_branch
+            (fun e e1 e2 prf => exist (fun x => x = e1 \/ x = e2)
+                                      e2 (or_intror eq_refl))
+            (fun v ty v1 v2 prf => exist (fun x => x = v1 \/ x = v2)
+                                      v2 (or_intror eq_refl))
+.
+
+Function
+    get_branch_v {picke : ebranch_picker_t} {pickv : vbranch_picker_t}
+                 (w : which_branch picke pickv)
+                 (v : value) :=
+  match v with
+    | Identifier t vn => v
+    | Integer _ _ => v
+    | Fix t f a b => Fix t f a (get_branch_e w b)
+    | Value_Evaluation_Pair t l r =>
+        match w with
+            | pick_left => get_branch_v w l
+            | pick_right => get_branch_v w r
+        end
+  end
+with
+    get_branch_e {picke : ebranch_picker_t} {pickv : vbranch_picker_t}
+                 (w : which_branch picke pickv)
+                 (e : expression) :=
+  match e with
+  | Value v => Value (get_branch_v w v)
+  | Application f a => Application (get_branch_v w f) (get_branch_v w a)
+  | Let_Bind nm vl e => Let_Bind nm (get_branch_v w vl) (get_branch_e w e)
+  | If1 t b1 b2 => If1 (get_branch_v w t) (get_branch_e w b1) (get_branch_e w b2)
+  | Expression_Evaluation_Pair l r =>
+        match w with
+        | pick_left => get_branch_e w l
+        | pick_right => get_branch_e w r
+        end
+  end.
+
 Function left_branch (expr : expression) :=
   match expr with
     | Expression_Evaluation_Pair l r => (left_branch l)
@@ -185,6 +236,25 @@ with left_branch_val (val : value) {struct val} :=
     | Value_Evaluation_Pair t l r => (left_branch_val l)
   end.
 
+Ltac rewrite_everything :=
+    try
+    match goal with
+    | H : _ |- _ =>
+            rewrite H;
+            repeat (rewrite H); clear H;
+            try (rewrite_everything)
+    end.
+
+
+Theorem leftbranch_ok_e : forall e, get_branch_e pick_left e = left_branch e
+    with leftbranch_ok_v : forall v, get_branch_v pick_left v = left_branch_val v.
+Proof.
+    Case "e". clear leftbranch_ok_e.
+        induction e; simpl; rewrite_everything; reflexivity.
+    Case "v". clear leftbranch_ok_v.
+        induction v; simpl; rewrite_everything; reflexivity.
+Qed.
+
 Function right_branch (expr : expression) :=
   match expr with
     | Expression_Evaluation_Pair l r => (right_branch r)
@@ -201,6 +271,15 @@ with right_branch_val (val : value) :=
     | Fix t f a b => Fix t f a (right_branch b)
     | Value_Evaluation_Pair t l r => (right_branch_val r)
   end.
+
+Theorem rightbranch_ok_e : forall e, get_branch_e pick_right e = right_branch e
+    with rightbranch_ok_v : forall v, get_branch_v pick_right v = right_branch_val v.
+Proof.
+    Case "e". clear rightbranch_ok_e.
+        induction e; simpl; rewrite_everything; reflexivity.
+    Case "v". clear rightbranch_ok_v.
+        induction v; simpl; rewrite_everything; reflexivity.
+Qed.
 
 Fixpoint get_type (val : value) : type :=
   match val with
