@@ -12,6 +12,10 @@ Function names_equal (n1 : variable_name) (n2 : variable_name) : bool :=
       | Var m1 => (match n2 with | Var m2 => (beq_nat m1 m2) end)
   end.
 
+Definition eq_variable_name_dec (n1 n2 : variable_name) : {n1 = n2} + {n1 <> n2}.
+Proof.
+  decide equality. apply eq_nat_dec.
+Defined.
 
 Inductive label_type : Set :=
   | High_Label : label_type
@@ -20,11 +24,19 @@ Inductive label_type : Set :=
    in addition to the standard types-line-up deal.
 *)
 
+Definition eq_label_type_dec (l1 l2 : label_type) : {l1 = l2} + {l1 <> l2}.
+Proof.
+  decide equality.
+Defined.
 
 Inductive type : Set :=
   | Int_t : label_type -> type
   | Fix_t : type -> type -> label_type -> type.
 
+Definition eq_type_dec (t1 t2 : type) : {t1 = t2} + {t1 <> t2}.
+Proof.
+  decide equality; apply eq_label_type_dec.
+Defined.
 
 Inductive value : Set :=
   | Identifier : type -> variable_name -> value
@@ -39,6 +51,14 @@ with expression : Set :=
   | If1 : value -> expression -> expression -> expression
   | Expression_Evaluation_Pair : expression -> expression -> expression.
 
+Lemma eq_value_dec (v1 v2 : value) : {v1 = v2} + {v1 <> v2}
+ with eq_expression_dec (e1 e2 : expression) : {e1 = e2} + {e1 <> e2}.
+Proof.
+  Case "v".
+    decide equality; auto using eq_nat_dec, eq_type_dec, eq_variable_name_dec, eq_label_type_dec.
+  Case "e".
+    decide equality; auto using eq_type_dec, eq_variable_name_dec.
+Qed.
 
 Function bpairfree_v (v : value) : bool :=
   match v with
