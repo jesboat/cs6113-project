@@ -330,6 +330,161 @@ with subst (var : variable_name) (bind : value) (expr : expression) : expression
                                       (subst var (right_branch_val bind) r)
   end.
 
+Function exprsize (e : expression) : nat :=
+    match e with
+      | Expression_Evaluation_Pair l r => 1 + exprsize l + exprsize r
+      | Value v => 1 + valsize v
+      | Application f a => 1 + valsize f + valsize a
+      | Let_Bind nm vl e => 1 + valsize vl + exprsize e
+      | If1 t b1 b2 => 1 + valsize t + exprsize b1 + exprsize b2
+    end
+
+  with valsize (val : value) :=
+    match val with
+      | Identifier _ _ => 1
+      | Integer _ _ => 1
+      | Fix t f a b => 1 + exprsize b
+      | Value_Evaluation_Pair t l r => 1 + valsize l + valsize r
+    end.
+
+Theorem expr_ind_size :
+    forall (P : expression -> Prop),
+    (forall e, (forall e', exprsize e' < exprsize e -> P e') -> P e) ->
+    forall e, P e.
+Proof.
+  intros P whenS.
+  exact (induction_ltof1 expression exprsize P whenS).
+Defined.
+
+Theorem expr_rec_size :
+    forall (P : expression -> Set),
+    (forall e, (forall e', exprsize e' < exprsize e -> P e') -> P e) ->
+    forall e, P e.
+Proof.
+  intros P whenS.
+  exact (induction_ltof1 expression exprsize P whenS).
+Defined.
+
+Theorem val_ind_size :
+    forall (P : value -> Prop),
+    (forall v, (forall v', valsize v' < valsize v -> P v') -> P v) ->
+    forall v, P v.
+Proof.
+  intros P whenS.
+  exact (induction_ltof1 value valsize P whenS).
+Defined.
+
+Theorem size_smaller_mega_v :
+    forall v,
+      (forall ty fn an expr, v = Fix ty fn an expr ->
+        exprsize expr < valsize v) /\
+      (forall ty v1 v2, v = Value_Evaluation_Pair ty v1 v2 ->
+        valsize v1 < valsize v) /\
+      (forall ty v1 v2, v = Value_Evaluation_Pair ty v1 v2 ->
+        valsize v2 < valsize v)
+   with size_smaller_mega_e :
+    forall e,
+      (forall v, e = Value v ->
+        valsize v < exprsize e) /\
+      (forall v1 v2, e = Application v1 v2 ->
+        valsize v1 < exprsize e) /\
+      (forall v1 v2, e = Application v1 v2 ->
+        valsize v2 < exprsize e) /\
+      (forall vn v1 e1, e = Let_Bind vn v1 e1 ->
+        valsize v1 < exprsize e) /\
+      (forall vn v1 e1, e = Let_Bind vn v1 e1 ->
+        exprsize e1 < exprsize e) /\
+      (forall v1 e1 e2, e = If1 v1 e1 e2 ->
+        valsize v1 < exprsize e) /\
+      (forall v1 e1 e2, e = If1 v1 e1 e2 ->
+        exprsize e1 < exprsize e) /\
+      (forall v1 e1 e2, e = If1 v1 e1 e2 ->
+        exprsize e2 < exprsize e) /\
+      (forall e1 e2, e = Expression_Evaluation_Pair e1 e2 ->
+        exprsize e1 < exprsize e) /\
+      (forall e1 e2, e = Expression_Evaluation_Pair e1 e2 ->
+        exprsize e2 < exprsize e).
+Proof.
+  Case "v". clear size_smaller_mega_v.
+    induction v;
+        repeat split; intros; simpl;
+        match goal with
+        | [ H : _ = _ |- _ ] => inversion_clear H; subst
+        end;
+        omega.
+
+  Case "e". clear size_smaller_mega_e.
+    induction e;
+        repeat split; intros; simpl;
+        match goal with
+        | [ H : _ = _ |- _ ] => inversion_clear H; subst
+        end;
+        omega.
+Qed.
+
+Theorem val_rec_size :
+    forall (P : value -> Set),
+    (forall v, (forall v', valsize v' < valsize v -> P v') -> P v) ->
+    forall v, P v.
+Proof.
+  intros P whenS.
+  exact (induction_ltof1 value valsize P whenS).
+Defined.
+
+Theorem left_size_e : forall e, exprsize (left_branch e) <= exprsize e
+   with left_size_v : forall v, valsize (left_branch_val v) <= valsize v.
+Proof.
+  Case "e". clear left_size_e.
+    induction e;
+        try match goal with
+        | [ v1 : value |- _ ] => pose proof (left_size_v v1)
+        end;
+        try match goal with
+        | [ v1 : value |- _ ] =>
+            match goal with
+            | [ H : context [ valsize v1 ] |- _ ] => fail 1
+            | _ => pose proof (left_size_v v1)
+            end
+        end;
+        simpl;
+        omega.
+
+  Case "v". clear left_size_v.
+    induction v;
+        try match goal with
+        | [ e1 : expression |- _ ] => pose proof (left_size_e e1)
+        end;
+        simpl;
+        omega.
+Qed.
+
+Theorem right_size_e : forall e, exprsize (right_branch e) <= exprsize e
+   with right_size_v : forall v, valsize (right_branch_val v) <= valsize v.
+Proof.
+  Case "e". clear right_size_e.
+    induction e;
+        try match goal with
+        | [ v1 : value |- _ ] => pose proof (right_size_v v1)
+        end;
+        try match goal with
+        | [ v1 : value |- _ ] =>
+            match goal with
+            | [ H : context [ valsize v1 ] |- _ ] => fail 1
+            | _ => pose proof (right_size_v v1)
+            end
+        end;
+        simpl;
+        omega.
+
+  Case "v". clear right_size_v.
+    induction v;
+        try match goal with
+        | [ e1 : expression |- _ ] => pose proof (right_size_e e1)
+        end;
+        simpl;
+        omega.
+Qed.
+
 Function wubst_values0
         (wubst : variable_name -> value -> expression -> expression)
         (var : variable_name) (bind : value) (val : value): value :=
