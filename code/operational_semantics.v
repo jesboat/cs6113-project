@@ -163,7 +163,7 @@ Inductive step : expression -> expression -> Prop :=
 | Lift_App_R : forall t v1 v2 v,
                  (Application (Value_Evaluation_Pair t v1 v2) v)
                    ==>
-                   (Expression_Evaluation_Pair (Application v1 (left_branch_val v)) (Application v1 (right_branch_val v)))
+                   (Expression_Evaluation_Pair (Application v1 (left_branch_val v)) (Application v2 (right_branch_val v)))
 | Lift_If_R : forall t vl vr e1 e2,
                   (If1 (Value_Evaluation_Pair t vl vr) e1 e2)
                     ==>
