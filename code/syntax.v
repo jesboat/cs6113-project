@@ -303,8 +303,10 @@ Function subst_values (var : variable_name) (bind : value) (val : value): value 
     | Fix t f a b => if (names_equal f var) then val else
                        if (names_equal a var) then val else
                          Fix t f a (subst var bind b)
-    | Value_Evaluation_Pair t v1 v2 => Value_Evaluation_Pair t (subst_values var bind v1)
-                                                             (subst_values var bind v2)
+    | Value_Evaluation_Pair t v1 v2
+            => Value_Evaluation_Pair t
+                    (subst_values var (left_branch_val bind) v1)
+                    (subst_values var (right_branch_val bind) v2)
     | Integer _ _ => val
   end
 
@@ -324,8 +326,8 @@ with subst (var : variable_name) (bind : value) (expr : expression) : expression
                (subst var bind th)
                (subst var bind el)
     | Expression_Evaluation_Pair l r
-        => Expression_Evaluation_Pair (subst var bind l)
-                                      (subst var bind r)
+        => Expression_Evaluation_Pair (subst var (left_branch_val bind) l)
+                                      (subst var (right_branch_val bind) r)
   end.
 
 Function wubst_values0
@@ -336,8 +338,8 @@ Function wubst_values0
     | Fix t f a b => if (names_equal f var) then val else
                        if (names_equal a var) then val else
                          Fix t f a (wubst var bind b)
-    | Value_Evaluation_Pair t v1 v2 => Value_Evaluation_Pair t (wubst_values0 wubst var bind v1)
-                                                             (wubst_values0 wubst var bind v2)
+    | Value_Evaluation_Pair t v1 v2 => Value_Evaluation_Pair t (wubst_values0 wubst var (left_branch_val bind) v1)
+                                                             (wubst_values0 wubst var (right_branch_val bind) v2)
     | Integer _ _ => val
   end.
 
@@ -359,13 +361,15 @@ Function wubst0
                (wubst0 wubst_values var bind th)
                (wubst0 wubst_values var bind el)
     | Expression_Evaluation_Pair l r
-        => Expression_Evaluation_Pair (wubst0 wubst_values var bind l)
-                                      (wubst0 wubst_values var bind r)
+        => Expression_Evaluation_Pair
+                (wubst0 wubst_values var (left_branch_val bind) l)
+                (wubst0 wubst_values var (right_branch_val bind) r)
   end.
 
 Definition wubst_values := wubst_values0 subst.
 Definition wubst := wubst0 subst_values.
 
+(*
 Theorem wubst_values_ok : forall i b v, subst_values i b v = wubst_values i b v
     with wubst_ok : forall i b e, subst i b e = wubst i b e.
 Proof.
@@ -373,11 +377,24 @@ Proof.
         unfold wubst_values in *. unfold wubst in *.
         induction v; try solve [ reflexivity
                                | simpl; rewrite_everything; reflexivity ].
+        simpl.
+        assert (subst_values i (left_branch_val b) v1
+                = wubst_values0 subst i (left_branch_val b) v1) by admit.
+        assert (subst_values i (right_branch_val b) v2
+                = wubst_values0 subst i (right_branch_val b) v2) by admit.
+        rewrite_everything; reflexivity.
     Case "e". clear wubst_ok.
         unfold wubst_values in *. unfold wubst in *.
         induction e; try solve [ reflexivity
                                | simpl; rewrite_everything; reflexivity ].
-Qed.
+        simpl.
+        assert (subst i (left_branch_val b) e1
+                = wubst0 subst_values i (left_branch_val b) e1) by admit.
+        assert (subst i (right_branch_val b) e2
+                = wubst0 subst_values i (right_branch_val b) e2) by admit.
+        rewrite_everything; reflexivity.
+Admitted.
+(* Qed. *)
 
 Theorem wubst_eq : forall i b e, wubst i b e = wubst0 wubst_values i b e.
 Proof.
@@ -399,4 +416,4 @@ Proof.
         repeat (rewrite wubst_ok);
         reflexivity.
 Defined.
-
+*)
