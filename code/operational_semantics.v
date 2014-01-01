@@ -623,6 +623,84 @@ Proof.
     SCase "lift".
     simpl. rewrite branch_rre. rewrite branch_rre. constructor. Qed.
 
+Lemma lemma_2l_strong : forall e e1,
+    e ==> e1 ->
+    left_branch e ==> left_branch e1 \/ left_branch e = left_branch e1.
+Proof.
+  intros e. functional induction (left_branch e).
+  Case "Expression_Evaluation_Pair".
+    intros e1 Hreduces. inversion Hreduces; subst; firstorder.
+  Case "Value".
+    intros e1 Hreduces. inversion Hreduces; subst.
+  Case "Application".
+    intros e1 Hreduces. inversion Hreduces; subst.
+    SCase "Beta_Reduction_R".
+      rewrite leftbranch_beta_comm.
+      rewrite leftbranch_beta_comm. simpl.
+      pose proof (Beta_Reduction_R t f0 x (left_branch e) (left_branch_val a)) as BR.
+      firstorder.
+    SCase "Lift_App_R".
+      simpl.
+      rewrite branch_llv.  firstorder.
+  Case "Let_Bind".
+    intros e1 Hreduces. inversion Hreduces; subst.
+    SCase "let".
+     pose proof (Let_R nm (left_branch_val vl) (left_branch e)) as LR.
+     rewrite leftbranch_beta_comm. firstorder.
+  Case "If1".
+    intros e1 Hreduces.  inversion Hreduces; subst.
+    SCase "0". simpl. pose proof (If1_R t0 (left_branch e1) (left_branch b2)) as IfR. firstorder.
+    SCase "nonzero".
+    simpl.
+    pose proof (Ifelse_R (left_branch_val t) (left_branch b1) (left_branch e1)) as IfR.
+    left; apply IfR.
+    intros. pose proof (H3 t0) as newH3.
+    destruct t; simpl; try first [ congruence | discriminate | assumption ].
+    destruct t; simpl; try first [ congruence | discriminate | assumption ].
+    SCase "lift".
+    simpl. rewrite branch_lle. rewrite branch_lle. firstorder. Qed.
+
+Lemma lemma_2r_strong : forall e e1,
+    e ==> e1 ->
+    right_branch e ==> right_branch e1 \/ right_branch e = right_branch e1.
+Proof.
+  intros e. functional induction (right_branch e).
+  Case "Expression_Evaluation_Pair".
+    intros e1 Hreduces. inversion Hreduces; subst.
+    SCase "left stepped". simpl. right. constructor.
+    SCase "right stepped". simpl. apply IHe0. assumption.
+  Case "Value".
+    intros e1 Hreduces. inversion Hreduces.
+  Case "Application".
+    intros e1 Hreduces.
+    inversion Hreduces; subst.
+    SCase "Beta_Reduction_R".
+      rewrite rightbranch_beta_comm.
+      rewrite rightbranch_beta_comm. simpl.
+      pose proof (Beta_Reduction_R t f0 x (right_branch e) (right_branch_val a)) as BR.
+      left. apply BR.
+    SCase "Lift_App_R".
+      simpl.
+      rewrite branch_rrv.  firstorder.
+  Case "Let_Bind".
+    intros e1 Hreduces.
+    inversion Hreduces; subst.
+    SCase "let".
+     pose proof (Let_R nm (right_branch_val vl) (right_branch e)) as LR.
+     rewrite rightbranch_beta_comm. firstorder.
+  Case "If1".
+    intros e1 Hreduces.  inversion Hreduces; subst.
+    SCase "0". simpl. pose proof (If1_R t0 (right_branch e1) (right_branch b2)) as IfR. firstorder.
+    SCase "nonzero".
+    simpl.
+    pose proof (Ifelse_R (right_branch_val t) (right_branch b1) (right_branch e1)) as IfR.
+    left; apply IfR.
+    intros. pose proof (H3 t0) as newH3.
+    destruct t; simpl; try first [ congruence | discriminate | assumption ].
+    destruct t; simpl; try first [ congruence | discriminate | assumption ].
+    SCase "lift".
+    simpl. rewrite branch_rre. rewrite branch_rre. firstorder. Qed.
+
 Theorem steps_dec
     : forall e, { e' : expression | e ==> e' } + { ~exists e', e ==>  e' }.
 Proof.
