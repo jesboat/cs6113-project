@@ -738,6 +738,79 @@ Proof.
       inversion Ht; subst; firstorder.
 Defined.
 
+Lemma multi_Bracket_left : forall e1 e2 e1',
+    e1 ==>* e1' ->
+    Expression_Evaluation_Pair e1 e2 ==>* Expression_Evaluation_Pair e1' e2.
+Proof.
+  pose proof Bracket_left_R as B.
+  intros. induction H.
+  Case "refl".  eapply multi_refl.
+  Case "step".  eapply multi_step; eauto.
+Qed.
+
+Lemma multi_Bracket_right : forall e1 e2 e2',
+    e2 ==>* e2' ->
+    Expression_Evaluation_Pair e1 e2 ==>* Expression_Evaluation_Pair e1 e2'.
+Proof.
+  pose proof Bracket_right_R as B.
+  intros. induction H.
+  Case "refl".  eapply multi_refl.
+  Case "step".  eapply multi_step; eauto.
+Qed.
+
+Theorem steps_diamond
+  : forall e e1 e2, e ==> e1 -> e ==> e2 ->
+      exists e', e1 ==>* e' /\ e2 ==>* e'.
+Proof.
+  assert (forall e e1 e2, e ==> e1 -> e ==> e2 ->
+              e1 = e2 ->
+              exists e', e1 ==>* e' /\ e2 ==>* e')
+      as det_diamond
+      by (intros; subst; eexists; split; econstructor).
+  induction e;
+    intros;
+      try solve [
+        eapply det_diamond; [ eassumption | eassumption | idtac ];
+        do 2 match goal with
+          | [ H: _ ==> _ |- _ ] => inversion H; subst; clear H
+        end;
+        reflexivity ].
+  Case "if".
+    eapply det_diamond; [ eassumption | eassumption | idtac ].
+    inversion H; subst; inversion H0; subst;
+      try solve [ reflexivity ];
+      try solve [ exfalso;
+          match goal with
+            | [ H : context[?a <> _] |- _ ] =>
+                assert (a = a) by reflexivity;
+                firstorder
+          end ].
+  Case "pair".
+    inversion H; subst; inversion H0; subst.
+    SCase "e1/e1".
+      destruct (IHe1 e1' e1'0 H4 H5) as [e1'' He1''].
+      exists (Expression_Evaluation_Pair e1'' e2).
+      split.
+        eapply multi_Bracket_left; tauto.
+        eapply multi_Bracket_left; tauto.
+    SCase "e1/e2".
+      exists (Expression_Evaluation_Pair e1' e2').
+      split.
+        apply step_implies_stepmany. constructor; assumption.
+        apply step_implies_stepmany. constructor; assumption.
+    SCase "e2/e1".
+      exists (Expression_Evaluation_Pair e1' e2').
+      split.
+        apply step_implies_stepmany. constructor; assumption.
+        apply step_implies_stepmany. constructor; assumption.
+    SCase "e2/e2".
+      destruct (IHe2 e2' e2'0 H4 H5) as [e2'' He2''].
+      exists (Expression_Evaluation_Pair e1 e2'').
+      split.
+        eapply multi_Bracket_right; tauto.
+        eapply multi_Bracket_right; tauto.
+Qed.
+
 Lemma is_value_dec : forall e, {is_value e} + {~is_value e}.
 Proof.
   destruct e;
